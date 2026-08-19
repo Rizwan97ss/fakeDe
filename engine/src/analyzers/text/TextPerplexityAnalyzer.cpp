@@ -25,7 +25,7 @@ Evidence TextPerplexityAnalyzer::analyze(const AnalysisInput& input) const {
     if (!isAvailable()) {
         evidence.score = 0.5;
         evidence.confidence = 0.0;
-        evidence.explanation = "Language model is not loaded (weights not fetched).";
+        evidence.explanation = "The language-checking model isn't set up on this server yet, so this check was skipped.";
         return evidence;
     }
 
@@ -36,7 +36,7 @@ Evidence TextPerplexityAnalyzer::analyze(const AnalysisInput& input) const {
     if (ids.size() < 8) {
         evidence.score = 0.5;
         evidence.confidence = 0.05;
-        evidence.explanation = "Text is too short for language-model perplexity scoring.";
+        evidence.explanation = "There isn't enough text here for this check to be useful.";
         return evidence;
     }
 
@@ -46,7 +46,7 @@ Evidence TextPerplexityAnalyzer::analyze(const AnalysisInput& input) const {
     if (!output || output->empty()) {
         evidence.score = 0.5;
         evidence.confidence = 0.05;
-        evidence.explanation = "Language model inference failed.";
+        evidence.explanation = "This check didn't run properly on this text.";
         return evidence;
     }
 
@@ -54,7 +54,7 @@ Evidence TextPerplexityAnalyzer::analyze(const AnalysisInput& input) const {
     if (vocabSize <= 0) {
         evidence.score = 0.5;
         evidence.confidence = 0.0;
-        evidence.explanation = "Unexpected model output shape.";
+        evidence.explanation = "This check didn't run properly on this text.";
         return evidence;
     }
 
@@ -94,10 +94,10 @@ Evidence TextPerplexityAnalyzer::analyze(const AnalysisInput& input) const {
     evidence.score = score;
     evidence.confidence = confidence;
     std::ostringstream explanation;
-    explanation << "GPT-2 perplexity " << std::fixed << std::setprecision(1) << perplexity << " - "
-                << (score > 0.6 ? "text is unusually predictable to the model, one weak signal among several "
-                                  "consistent with AI generation."
-                                : "text's predictability is within a typical human-writing range.");
+    explanation << (score > 0.6
+                         ? "This text is unusually easy for our language model to predict, word by word — one "
+                           "weak clue that it might be AI-written."
+                         : "This text's word-by-word predictability looks like typical human writing.");
     evidence.explanation = explanation.str();
     evidence.rawDetails["perplexity"] = perplexity;
     evidence.rawDetails["burstiness"] = burstiness;

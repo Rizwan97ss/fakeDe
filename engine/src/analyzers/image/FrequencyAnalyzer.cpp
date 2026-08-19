@@ -49,7 +49,7 @@ Evidence FrequencyAnalyzer::analyze(const AnalysisInput& input) const {
     if (bgr.empty() || std::min(bgr.rows, bgr.cols) < 32) {
         evidence.score = 0.5;
         evidence.confidence = 0.0;
-        evidence.explanation = "Image too small or undecodable for frequency-spectrum analysis.";
+        evidence.explanation = "This image is too small, or couldn't be opened, to check for this kind of pattern.";
         return evidence;
     }
 
@@ -133,10 +133,9 @@ Evidence FrequencyAnalyzer::analyze(const AnalysisInput& input) const {
     evidence.score = score;
     evidence.confidence = 0.5; // one heuristic signal among several; moderate standalone confidence
     evidence.explanation = score > 0.6
-        ? "High-frequency spectrum shows irregular, grid-like energy inconsistent with natural camera noise, "
-          "a pattern often left by GAN/diffusion upsampling."
-        : "High-frequency spectrum decays smoothly, consistent with a naturally captured or single-pass "
-          "compressed image.";
+        ? "We found a faint, repeating grid-like pattern in this image's fine detail — the kind AI image "
+          "generators often leave behind, and real camera photos usually don't have."
+        : "The fine detail in this image looks smooth and natural, the way real camera photos usually look.";
     evidence.rawDetails["highFreqResidualStd"] = highFreqResidualStd;
 
     // Visualization: the log-magnitude spectrum itself, normalized to 0-255.

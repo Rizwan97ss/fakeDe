@@ -38,7 +38,7 @@ Evidence VideoAiFrameAnalyzer::analyze(const AnalysisInput& input) const {
     if (!sample || sample->frames.size() < kMinFrames) {
         evidence.score = 0.5;
         evidence.confidence = 0.0;
-        evidence.explanation = "Video could not be decoded or has too few frames to classify.";
+        evidence.explanation = "We couldn't process enough of this video to check it.";
         return evidence;
     }
 
@@ -59,11 +59,10 @@ Evidence VideoAiFrameAnalyzer::analyze(const AnalysisInput& input) const {
     evidence.confidence = std::clamp(0.5 + 0.3 * (frameScores.size() / static_cast<double>(kMaxFrames)), 0.0, 0.8);
 
     std::ostringstream explanation;
-    explanation << "Averaged the AI-image classifier's score across " << frameScores.size() << " sampled frames "
-                << "(frame-to-frame std " << std::round(stdScore * 100) / 100.0 << "). "
-                << (meanScore > 0.6
-                        ? "Frames are, on average, assessed as likely AI-generated or synthesized."
-                        : "Frames are, on average, assessed as likely authentic camera footage.");
+    explanation << "We checked " << frameScores.size() << " frames from this video using our AI-image "
+                << "detector. On average, the frames look like "
+                << (meanScore > 0.6 ? "they were AI-generated rather than real camera footage."
+                                    : "real camera footage, not AI-generated.");
     evidence.explanation = explanation.str();
     evidence.rawDetails["sampledFrames"] = frameScores.size();
     evidence.rawDetails["frameScoreStd"] = stdScore;

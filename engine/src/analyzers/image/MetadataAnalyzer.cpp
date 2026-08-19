@@ -51,8 +51,9 @@ Evidence MetadataAnalyzer::analyze(const AnalysisInput& input) const {
         if (exif.empty()) {
             score = 0.58;
             confidence = 0.3;
-            explanation = "No EXIF metadata present. Common for AI-generated images and for web-downloaded or "
-                          "screenshot images alike, so this alone is weak evidence.";
+            explanation = "This picture has no hidden camera details attached (like what phone or camera took "
+                          "it). That's normal for AI-made images, but also very common for ordinary photos "
+                          "shared online, so this clue alone doesn't tell us much.";
         } else {
             const bool hasMake = exif.findKey(Exiv2::ExifKey("Exif.Image.Make")) != exif.end();
             const bool hasModel = exif.findKey(Exiv2::ExifKey("Exif.Image.Model")) != exif.end();
@@ -69,25 +70,29 @@ Evidence MetadataAnalyzer::analyze(const AnalysisInput& input) const {
             if (aiTagFound) {
                 score = 0.95;
                 confidence = 0.9;
-                explanation = "Software tag identifies a known generative-AI tool.";
+                explanation = "This file's hidden details name a known AI image tool — about as clear as this "
+                              "kind of evidence gets.";
             } else if (hasMake && hasModel) {
                 score = 0.15;
                 confidence = 0.6;
-                explanation = "Camera make/model metadata present, consistent with a real camera capture.";
+                explanation = "This file has real camera details attached (make and model), the kind a genuine "
+                              "photo usually carries.";
             } else if (editorTagFound) {
                 score = 0.6;
                 confidence = 0.4;
-                explanation = "Software tag indicates conventional photo-editing software was used.";
+                explanation = "This file's hidden details show it was opened in regular photo-editing software "
+                              "— it's been edited by someone at some point, though not necessarily by AI.";
             } else {
                 score = 0.5;
                 confidence = 0.25;
-                explanation = "EXIF metadata present but inconclusive: no camera or known editor/AI software identified.";
+                explanation = "This file has some hidden details attached, but nothing pointing clearly to a "
+                              "camera or to AI software — doesn't tell us much either way.";
             }
         }
     } catch (const Exiv2::Error&) {
         score = 0.5;
         confidence = 0.15;
-        explanation = "Metadata could not be parsed for this file.";
+        explanation = "We couldn't read this file's hidden details.";
     }
 
     evidence.score = score;

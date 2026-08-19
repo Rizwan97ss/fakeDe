@@ -68,14 +68,13 @@ Evidence PdfForensicsAnalyzer::analyze(const AnalysisInput& input) const {
 
     std::ostringstream explanation;
     if (extraRevisions == 0 && prevCount == 0) {
-        explanation << "No incremental-update revisions detected - consistent with a file that hasn't been edited "
-                       "since it was generated (or was edited via a compressed cross-reference stream, which this "
-                       "check can't see).";
+        explanation << "This PDF doesn't show any signs of being edited after it was first created (or it was "
+                       "edited in a way this particular check can't see).";
     } else {
-        explanation << "Found " << (extraRevisions + 1) << " revision(s) in this PDF's update history";
-        if (hasSignature) explanation << ", including at least one edit after a digital signature was present";
-        explanation << ". This means the file was edited after its initial generation - not necessarily malicious "
-                       "(e.g. a filled-out form), but worth knowing.";
+        explanation << "This PDF has been edited " << (extraRevisions + 1) << " time(s) after it was first created";
+        if (hasSignature) explanation << ", including at least once after it was digitally signed — worth double-checking";
+        explanation << ". That's not necessarily suspicious (someone may have just filled out a form), but the "
+                       "file isn't in its original state.";
     }
     evidence.explanation = explanation.str();
 

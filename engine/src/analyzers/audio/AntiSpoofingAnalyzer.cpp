@@ -56,7 +56,7 @@ Evidence AntiSpoofingAnalyzer::analyze(const AnalysisInput& input) const {
     if (!session_->isLoaded()) {
         evidence.score = 0.5;
         evidence.confidence = 0.0;
-        evidence.explanation = "Synthetic-speech classifier model is not loaded (weights not fetched).";
+        evidence.explanation = "The synthetic-voice-detection model isn't set up on this server yet, so this check was skipped.";
         return evidence;
     }
 
@@ -64,7 +64,7 @@ Evidence AntiSpoofingAnalyzer::analyze(const AnalysisInput& input) const {
     if (!decoded) {
         evidence.score = 0.5;
         evidence.confidence = 0.0;
-        evidence.explanation = "Audio could not be decoded for classification.";
+        evidence.explanation = "We couldn't process this audio for this check.";
         return evidence;
     }
 
@@ -76,7 +76,7 @@ Evidence AntiSpoofingAnalyzer::analyze(const AnalysisInput& input) const {
     if (!output || output->empty()) {
         evidence.score = 0.5;
         evidence.confidence = 0.1;
-        evidence.explanation = "Model inference failed to produce a result.";
+        evidence.explanation = "This check didn't run properly on this audio.";
         return evidence;
     }
 
@@ -95,9 +95,10 @@ Evidence AntiSpoofingAnalyzer::analyze(const AnalysisInput& input) const {
     evidence.score = std::clamp(fakeProbability, 0.0, 1.0);
     evidence.confidence = 0.8; // purpose-built classifier; high standalone confidence when loaded
     evidence.explanation = evidence.score > 0.6
-        ? "The synthetic-speech classifier assigns a high probability that this audio was generated or "
-          "voice-cloned rather than recorded from a real speaker."
-        : "The synthetic-speech classifier assigns a low probability of synthetic/spoofed audio.";
+        ? "We ran this audio through a model trained to catch AI-generated or cloned voices. It thinks this "
+          "audio is very likely synthetic, not a real recorded voice."
+        : "We ran this audio through a model trained to catch AI-generated or cloned voices. It thinks this "
+          "is very likely a real recorded voice, not synthetic.";
     evidence.rawDetails["fakeProbability"] = fakeProbability;
 
     return evidence;

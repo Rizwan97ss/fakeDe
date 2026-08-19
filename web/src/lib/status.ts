@@ -40,3 +40,12 @@ export const STATUS_ICON: Record<StatusTone, string> = {
   warning: "alert-triangle",
   critical: "x-octagon",
 };
+
+// Plain-language reading of a single evidence card's score, so "confidence 85%" next
+// to a low score bar can't be misread as "85% likely fake" - the tag says which way
+// the signal actually leans, in words, before the reader has to interpret a percentage.
+export const TONE_READING: Record<StatusTone, string> = {
+  good: "Looks authentic",
+  warning: "Not clear either way",
+  critical: "Signs of AI or editing",
+};

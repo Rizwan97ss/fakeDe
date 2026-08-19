@@ -24,7 +24,7 @@ Evidence SpliceDetectionAnalyzer::analyze(const AnalysisInput& input) const {
     if (!decoded) {
         evidence.score = 0.5;
         evidence.confidence = 0.0;
-        evidence.explanation = "Audio could not be decoded.";
+        evidence.explanation = "We couldn't process this audio.";
         return evidence;
     }
 
@@ -32,7 +32,7 @@ Evidence SpliceDetectionAnalyzer::analyze(const AnalysisInput& input) const {
     if (frames.size() < kMinQuietFrames * 5) {
         evidence.score = 0.5;
         evidence.confidence = 0.05;
-        evidence.explanation = "Audio is too short for reliable noise-floor analysis.";
+        evidence.explanation = "This audio is too short to reliably check its background noise.";
         return evidence;
     }
 
@@ -53,7 +53,7 @@ Evidence SpliceDetectionAnalyzer::analyze(const AnalysisInput& input) const {
     if (quietLevels.size() < kMinQuietFrames) {
         evidence.score = 0.5;
         evidence.confidence = 0.1;
-        evidence.explanation = "Not enough quiet segments found to establish a noise floor.";
+        evidence.explanation = "We couldn't find enough quiet moments in this audio to check its background noise.";
         return evidence;
     }
 
@@ -70,10 +70,11 @@ Evidence SpliceDetectionAnalyzer::analyze(const AnalysisInput& input) const {
     evidence.score = score;
     evidence.confidence = confidence;
     std::ostringstream explanation;
-    explanation << "Background noise floor across quiet segments varies by " << std::round(stdDb * 10) / 10.0
-                << " dB - " << (score > 0.5 ? "inconsistent enough to suggest audio from different sources or "
-                                               "recording sessions was combined."
-                                             : "consistent with a single, unedited recording.");
+    explanation << (score > 0.5
+                         ? "The quiet background noise in this clip changes noticeably throughout — that can "
+                           "happen when audio from different recordings or sources gets stitched together."
+                         : "The quiet background noise in this clip stays consistent throughout, like a "
+                           "single, unedited recording.");
     evidence.explanation = explanation.str();
     evidence.rawDetails["noiseFloorStdDb"] = stdDb;
     evidence.rawDetails["quietFrameCount"] = quietLevels.size();

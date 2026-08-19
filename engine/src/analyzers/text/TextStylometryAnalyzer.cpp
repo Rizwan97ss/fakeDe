@@ -75,7 +75,7 @@ Evidence TextStylometryAnalyzer::analyze(const AnalysisInput& input) const {
     if (sentences.size() < 4 || allWords.size() < 40) {
         evidence.score = 0.5;
         evidence.confidence = 0.05;
-        evidence.explanation = "Text is too short for stylometric analysis to be meaningful.";
+        evidence.explanation = "There isn't enough text here to check writing style reliably.";
         return evidence;
     }
 
@@ -123,9 +123,11 @@ Evidence TextStylometryAnalyzer::analyze(const AnalysisInput& input) const {
     evidence.score = score;
     evidence.confidence = confidence;
     std::ostringstream explanation;
-    explanation << "Sentence-length variation is " << (burstiness < 0.4 ? "low (more uniform than typical human writing)"
-                                                                          : "consistent with typical human writing")
-                << ". Text stylometry alone is weak evidence - treat as advisory.";
+    explanation << (burstiness < 0.4
+                         ? "This text's sentence lengths are unusually even and consistent — real human "
+                           "writing usually varies more from sentence to sentence."
+                         : "This text's sentence lengths vary the way typical human writing does.")
+                << " This is a weak clue on its own, not proof either way.";
     evidence.explanation = explanation.str();
     evidence.rawDetails["sentenceCount"] = sentences.size();
     evidence.rawDetails["wordCount"] = allWords.size();

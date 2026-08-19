@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import type { Evidence } from "../../api/types";
-import { toneForScore } from "../../lib/status";
+import { toneForScore, STATUS_COLOR, TONE_READING } from "../../lib/status";
 import { ScoreBar } from "./ScoreBar";
 import { StatusIcon } from "./StatusIcon";
 
@@ -28,9 +28,12 @@ export function EvidenceCard({ evidence }: { evidence: Evidence }) {
               {evidence.humanLabel}
             </h3>
             <span className="text-xs tabular-nums shrink-0" style={{ color: "var(--text-muted)" }}>
-              confidence {Math.round(evidence.confidence * 100)}%
+              {Math.round(evidence.confidence * 100)}% sure
             </span>
           </div>
+          <p className="mt-0.5 text-sm font-medium" style={{ color: STATUS_COLOR[tone] }}>
+            {TONE_READING[tone]}
+          </p>
           <div className="mt-2">
             <ScoreBar value={evidence.score} tone={tone} />
           </div>

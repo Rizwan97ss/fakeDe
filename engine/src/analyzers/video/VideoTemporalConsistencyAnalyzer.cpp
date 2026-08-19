@@ -48,7 +48,7 @@ Evidence VideoTemporalConsistencyAnalyzer::analyze(const AnalysisInput& input) c
     if (!sample || sample->frames.size() < kMinFrames) {
         evidence.score = 0.5;
         evidence.confidence = 0.0;
-        evidence.explanation = "Video could not be decoded or has too few frames for temporal analysis.";
+        evidence.explanation = "We couldn't process enough of this video to check it.";
         return evidence;
     }
 
@@ -74,11 +74,12 @@ Evidence VideoTemporalConsistencyAnalyzer::analyze(const AnalysisInput& input) c
     evidence.score = score;
     evidence.confidence = confidence;
     std::ostringstream explanation;
-    explanation << "Sampled " << sample->frames.size() << " frames; classical forensic scores "
-                << (score > 0.5 ? "vary noticeably frame-to-frame, consistent with inconsistent or regenerated "
-                                  "content rather than continuous camera footage."
-                                : "stay fairly consistent across frames, consistent with continuous footage from a "
-                                  "single source.");
+    explanation << "We checked " << sample->frames.size() << " frames from this video. "
+                << (score > 0.5 ? "The picture-quality clues changed noticeably from frame to frame, which can "
+                                  "happen with edited or AI-generated video rather than one continuous "
+                                  "camera recording."
+                                : "The picture-quality clues stayed fairly consistent frame to frame, like "
+                                  "continuous footage from one camera.");
     evidence.explanation = explanation.str();
     evidence.rawDetails["sampledFrames"] = sample->frames.size();
     evidence.rawDetails["elaScoreStd"] = elaStd;

@@ -23,7 +23,7 @@ Evidence VoiceNaturalnessAnalyzer::analyze(const AnalysisInput& input) const {
     if (!decoded) {
         evidence.score = 0.5;
         evidence.confidence = 0.0;
-        evidence.explanation = "Audio could not be decoded.";
+        evidence.explanation = "We couldn't process this audio.";
         return evidence;
     }
 
@@ -40,7 +40,7 @@ Evidence VoiceNaturalnessAnalyzer::analyze(const AnalysisInput& input) const {
     if (periods.size() < kMinVoicedFrames) {
         evidence.score = 0.5;
         evidence.confidence = 0.05;
-        evidence.explanation = "Not enough clearly-voiced audio to estimate jitter/shimmer.";
+        evidence.explanation = "There isn't enough clear speech in this clip to check for natural voice variation.";
         return evidence;
     }
 
@@ -67,10 +67,11 @@ Evidence VoiceNaturalnessAnalyzer::analyze(const AnalysisInput& input) const {
     evidence.score = score;
     evidence.confidence = confidence;
     std::ostringstream explanation;
-    explanation << "Pitch/amplitude micro-variation is " << (score > 0.6 ? "unusually low (smoother than typical "
-                                                                             "natural speech)"
-                                                                          : "within a typical natural-speech range")
-                << ". A classical signal, weaker against modern neural voice synthesis - treat as advisory.";
+    explanation << (score > 0.6
+                         ? "This voice sounds unusually smooth and steady — real human voices naturally waver "
+                           "a little more than this."
+                         : "This voice has the small natural wavering you'd expect from a real human speaker.")
+                << " This is a weaker clue against modern AI voice cloning, so treat it as advisory.";
     evidence.explanation = explanation.str();
     evidence.rawDetails["jitter"] = jitter;
     evidence.rawDetails["shimmer"] = shimmer;

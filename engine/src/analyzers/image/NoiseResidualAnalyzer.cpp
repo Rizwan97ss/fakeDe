@@ -44,7 +44,7 @@ Evidence NoiseResidualAnalyzer::analyze(const AnalysisInput& input) const {
     if (bgr.empty() || std::min(bgr.rows, bgr.cols) < 64) {
         evidence.score = 0.5;
         evidence.confidence = 0.0;
-        evidence.explanation = "Image too small or undecodable for noise-residual analysis.";
+        evidence.explanation = "This image is too small, or couldn't be opened, to check its grain and texture.";
         return evidence;
     }
 
@@ -87,12 +87,12 @@ Evidence NoiseResidualAnalyzer::analyze(const AnalysisInput& input) const {
     evidence.score = score;
     evidence.confidence = blockSigmas.empty() ? 0.3 : 0.45;
     evidence.explanation = lowNoiseScore > inconsistencyScore
-        ? (score > 0.55 ? "Noise floor is unusually low/uniform across the whole image, consistent with "
-                          "fully synthetic generation rather than a camera sensor."
-                        : "Noise floor is consistent with a real camera sensor.")
-        : (score > 0.55 ? "Noise level varies inconsistently between regions, a pattern consistent with "
-                          "a spliced or composited region."
-                        : "Noise level is consistent across the image.");
+        ? (score > 0.55 ? "This image is unusually smooth all over — real camera photos almost always have a "
+                          "little natural grain that this one is missing, which is common in AI-made images."
+                        : "This image has the small amount of natural grain you'd expect from a real camera.")
+        : (score > 0.55 ? "Different parts of this image have noticeably different amounts of grain, which "
+                          "can happen when pieces from different photos are combined."
+                        : "The grain in this image looks consistent from one part to another.");
     evidence.rawDetails["globalNoiseSigma"] = globalSigma;
     evidence.rawDetails["blockNoiseCoefficientOfVariation"] = coefficientOfVariation;
 

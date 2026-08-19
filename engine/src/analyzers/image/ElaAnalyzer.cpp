@@ -28,7 +28,7 @@ Evidence ElaAnalyzer::analyze(const AnalysisInput& input) const {
     if (original.empty()) {
         evidence.score = 0.5;
         evidence.confidence = 0.0;
-        evidence.explanation = "Image could not be decoded for Error Level Analysis.";
+        evidence.explanation = "We couldn't open this image to check it.";
         return evidence;
     }
 
@@ -63,8 +63,8 @@ Evidence ElaAnalyzer::analyze(const AnalysisInput& input) const {
     evidence.score = score;
     evidence.confidence = confidence;
     evidence.explanation = score > 0.6
-        ? "Elevated and/or localized recompression error suggests possible splicing or editing."
-        : "Recompression error is low and fairly uniform, consistent with a single-generation image.";
+        ? "Some areas of this image show signs of being edited or pasted in separately from the rest."
+        : "This image looks like it was saved the same way all over, with no signs of parts being pasted in.";
 
     cv::Mat heatmap;
     cv::applyColorMap(gray, heatmap, cv::COLORMAP_INFERNO);

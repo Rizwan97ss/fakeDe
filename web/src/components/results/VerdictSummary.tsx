@@ -24,10 +24,10 @@ export function VerdictSummary({ verdict, fileName }: { verdict: Verdict; fileNa
           </h2>
         </div>
         <p className="text-sm max-w-prose" style={{ color: "var(--text-secondary)" }}>
-          Overall confidence in this verdict: <strong>{Math.round(verdict.overallConfidence * 100)}%</strong>.
-          This is a fused estimate from {verdict.evidenceBreakdown.length} independent signals below — read
-          the breakdown, not just this badge. AI/fake-content detection is an unsolved, adversarial problem;
-          treat this as strong advisory evidence, not a certainty.
+          We're <strong>{Math.round(verdict.overallConfidence * 100)}% sure</strong> about this result. It's
+          based on {verdict.evidenceBreakdown.length} separate checks below, worth reading through — not just
+          this badge. No tool, including this one, can promise a 100% certain answer for every file, so treat
+          this as a strong clue, not a guarantee.
         </p>
       </div>
     </div>
