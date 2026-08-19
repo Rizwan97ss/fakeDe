@@ -29,3 +29,13 @@ export interface ApiErrorResponse {
   error: string;
   detectedMimeType?: string;
 }
+
+// Mirrors AnalysisSummary in engine/src/core/JobStore.h - one row of the history list.
+export interface AnalysisSummary {
+  id: string;
+  fileName: string;
+  mimeType: string;
+  overallLabel: VerdictLabel | "";
+  overallScore: number;
+  createdAt: string;
+}

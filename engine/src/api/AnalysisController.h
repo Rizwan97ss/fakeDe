@@ -28,6 +28,9 @@ public:
                           std::function<void(const drogon::HttpResponsePtr&)>&& callback,
                           std::string id) const;
 
+    void handleListRecent(const drogon::HttpRequestPtr& req,
+                           std::function<void(const drogon::HttpResponsePtr&)>&& callback) const;
+
 private:
     std::shared_ptr<AnalyzerRegistry> registry_;
     std::shared_ptr<JobStore> jobStore_;

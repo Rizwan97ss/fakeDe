@@ -82,20 +82,45 @@ new analyzer just implements `IAnalyzer` and gets registered — see
   other yet). These were explicitly scoped out of this pass rather than attempted
   and left half-working.
 
-## Phase 5 — Product hardening (not started)
+## Phase 5 — Product hardening (in progress)
 
-- **Async & WebSocket**: video (and, to a lesser extent, audio) jobs are the reason
-  the synchronous Phase-1 API isn't enough long-term — this would add a job queue and
+- **Done: single shared-secret API-key auth.** If `FAKEDE_API_KEY` is set, every
+  `/api/v1/*` request except `/health` and CORS preflight must carry a matching
+  `X-API-Key` header (`main.cpp`'s `registerPreRoutingAdvice`); unset (the default),
+  auth stays off for local dev. The frontend sends it from a build-time
+  `VITE_FAKEDE_API_KEY` env var. **This is deliberately not a user-account system** —
+  no sessions, no per-user identity, no registration/login flow. It's a single-secret
+  gate meant to keep a deployed engine from anonymous public traffic. A real
+  multi-user auth system (sessions/JWT, a users table, per-user history) is a
+  distinct, larger scope decision, explicitly deferred rather than half-built - see
+  `docs/ARCHITECTURE.md`.
+- **Done: real analysis-history dashboard.** `GET /api/v1/analyses?limit=N` (default
+  20, capped at 100) lists recent results (id, fileName, mimeType, overallLabel,
+  overallScore, createdAt) via `JobStore::listRecent()`; the frontend's History tab
+  (`web/src/pages/HistoryPage.tsx`) lists them and clicking a row re-fetches the full
+  verdict via the existing `GET /api/v1/analyze/{id}`, which now also returns
+  `id`/`fileName`/`detectedMimeType` (a real gap found and fixed during this work -
+  it previously returned a bare `Verdict` with no file identity, silently blanking
+  the filename in the UI whenever a result was reopened rather than freshly
+  analyzed).
+- **Done: configurable CORS.** `FAKEDE_ALLOWED_ORIGIN` (default `*`, fine for local
+  dev) replaces the previously hardcoded wildcard; set it to a specific origin for
+  any real deployment.
+- **Not done: async & WebSocket.** Video (and, to a lesser extent, audio) jobs are the
+  reason the synchronous API isn't enough long-term — this would add a job queue and
   a WebSocket progress channel (Drogon has native WebSocket support) so the frontend
   can show per-frame/per-analyzer progress instead of blocking on one long HTTP
-  request. Deferred through Phase 4 because test clips were short enough not to force
-  the issue yet.
-- Auth + a real analysis-history dashboard (Phase 1's SQLite store only supports
-  fetch-by-id).
-- Fusion calibration: replace `FusionEngine`'s fixed weighted average with a properly
-  calibrated model (Platt/isotonic scaling) once real usage produces labeled
-  validation data.
-- Production CORS/auth hardening (Phase 1's `main.cpp` allows any origin — fine for
-  local development, not for a public deployment).
+  request. Still deferred - test clips remain short enough not to force the issue.
+- **Not done: fusion calibration.** `FusionEngine` still uses a fixed, transparently
+  labeled weighted average, not a properly calibrated model (Platt/isotonic scaling).
+  This is genuinely blocked, not just unscheduled: calibration needs labeled
+  ground-truth validation data (real authentic + real fake examples with known
+  labels) that this project doesn't have. Fabricating calibration without that data
+  would be worse than the honest fixed-weight average it has now.
+- **Not done: full multi-user auth, real production deployment hardening beyond
+  CORS/API-key** (rate limiting, secrets management, TLS termination, etc.) - open for
+  whenever this moves toward a real public deployment.
 - Revisit `docs/model-sourcing.md` licensing for every integrated model before any
-  commercial launch.
+  commercial launch. Reviewed 2026-08-19: all four integrated models (UniversalFakeDetect,
+  GPT-2, RawNet2, and video's reuse of UniversalFakeDetect) remain MIT-licensed per
+  their existing entries; nothing new was added that needs a license check.

@@ -61,6 +61,25 @@ document support (see `docs/ROADMAP.md`) means writing new `IAnalyzer` implement
 and registering them — `AnalyzerRegistry`, `FusionEngine`, the HTTP layer, and the
 frontend's evidence-breakdown UI don't need to change shape.
 
+## Why auth is a single shared secret, not a user-account system
+
+`main.cpp` gates every `/api/v1/*` route (except `/health` and CORS preflight) behind
+an `X-API-Key` header check, active only when `FAKEDE_API_KEY` is set (unset by
+default, so local dev needs no configuration). This is intentionally minimal: no
+sessions, no password storage, no per-user identity or history. The goal is narrow -
+stop a deployed engine from being hit by anonymous public/bot traffic - not to build
+real product-grade auth. A full user-account system (registration, login, per-user
+history) is a materially bigger, distinct scope decision (password storage strategy,
+session/JWT handling, a users table, frontend login UI) that was deliberately not
+started alongside this, rather than half-built. See `docs/ROADMAP.md` Phase 5.
+
+The frontend sends the same shared secret from a build-time `VITE_FAKEDE_API_KEY` env
+var (`web/.env.local`, gitignored). Because it's baked into the client bundle, this
+only works as a shared-deployment secret (protects against traffic that isn't coming
+from the official frontend build) - it is not a boundary against a user who can read
+their own browser's JS bundle, which is a fundamental limit of any client-embedded
+secret, not a bug to fix later.
+
 ## Why verdicts are never a bare true/false
 
 AI/fake-content detection is an unsolved, adversarial problem — see

@@ -37,6 +37,8 @@ void JobStore::migrate() {
         "  file_name TEXT NOT NULL,"
         "  mime_type TEXT NOT NULL,"
         "  verdict_json TEXT NOT NULL,"
+        "  overall_label TEXT NOT NULL DEFAULT '',"
+        "  overall_score REAL NOT NULL DEFAULT 0,"
         "  created_at TEXT NOT NULL DEFAULT (datetime('now'))"
         ");";
     char* errMsg = nullptr;
@@ -45,13 +47,23 @@ void JobStore::migrate() {
         sqlite3_free(errMsg);
         throw std::runtime_error("failed to migrate sqlite db: " + msg);
     }
+    // Best-effort upgrade for databases created before these columns existed (Phases
+    // 1-4). Fails harmlessly with "duplicate column" on a fresh CREATE TABLE above,
+    // or on a database that's already been upgraded - both ignored on purpose.
+    sqlite3_exec(db_, "ALTER TABLE results ADD COLUMN overall_label TEXT NOT NULL DEFAULT '';", nullptr, nullptr,
+                 nullptr);
+    sqlite3_exec(db_, "ALTER TABLE results ADD COLUMN overall_score REAL NOT NULL DEFAULT 0;", nullptr, nullptr,
+                 nullptr);
 }
 
 std::string JobStore::saveResult(const std::string& fileName, const std::string& mimeType,
-                                  const std::string& verdictJson) {
+                                  const std::string& verdictJson, const std::string& overallLabel,
+                                  double overallScore) {
     const std::string id = makeId();
     sqlite3_stmt* stmt = nullptr;
-    const char* sql = "INSERT INTO results (id, file_name, mime_type, verdict_json) VALUES (?, ?, ?, ?);";
+    const char* sql =
+        "INSERT INTO results (id, file_name, mime_type, verdict_json, overall_label, overall_score) "
+        "VALUES (?, ?, ?, ?, ?, ?);";
     if (sqlite3_prepare_v2(db_, sql, -1, &stmt, nullptr) != SQLITE_OK) {
         throw std::runtime_error("failed to prepare insert statement");
     }
@@ -59,6 +71,8 @@ std::string JobStore::saveResult(const std::string& fileName, const std::string&
     sqlite3_bind_text(stmt, 2, fileName.c_str(), -1, SQLITE_TRANSIENT);
     sqlite3_bind_text(stmt, 3, mimeType.c_str(), -1, SQLITE_TRANSIENT);
     sqlite3_bind_text(stmt, 4, verdictJson.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmt, 5, overallLabel.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_double(stmt, 6, overallScore);
 
     const int rc = sqlite3_step(stmt);
     sqlite3_finalize(stmt);
@@ -68,23 +82,53 @@ std::string JobStore::saveResult(const std::string& fileName, const std::string&
     return id;
 }
 
-std::optional<std::string> JobStore::getResultJson(const std::string& id) const {
+std::optional<StoredResult> JobStore::getResult(const std::string& id) const {
     sqlite3_stmt* stmt = nullptr;
-    const char* sql = "SELECT verdict_json FROM results WHERE id = ?;";
+    const char* sql = "SELECT file_name, mime_type, verdict_json FROM results WHERE id = ?;";
     if (sqlite3_prepare_v2(db_, sql, -1, &stmt, nullptr) != SQLITE_OK) {
         return std::nullopt;
     }
     sqlite3_bind_text(stmt, 1, id.c_str(), -1, SQLITE_TRANSIENT);
 
-    std::optional<std::string> result;
+    std::optional<StoredResult> result;
     if (sqlite3_step(stmt) == SQLITE_ROW) {
-        const unsigned char* text = sqlite3_column_text(stmt, 0);
-        if (text) {
-            result = std::string(reinterpret_cast<const char*>(text));
-        }
+        auto textOrEmpty = [stmt](int col) {
+            const unsigned char* text = sqlite3_column_text(stmt, col);
+            return text ? std::string(reinterpret_cast<const char*>(text)) : std::string();
+        };
+        result = StoredResult{textOrEmpty(0), textOrEmpty(1), textOrEmpty(2)};
     }
     sqlite3_finalize(stmt);
     return result;
+}
+
+std::vector<AnalysisSummary> JobStore::listRecent(int limit) const {
+    std::vector<AnalysisSummary> out;
+    sqlite3_stmt* stmt = nullptr;
+    const char* sql =
+        "SELECT id, file_name, mime_type, overall_label, overall_score, created_at "
+        "FROM results ORDER BY created_at DESC, rowid DESC LIMIT ?;";
+    if (sqlite3_prepare_v2(db_, sql, -1, &stmt, nullptr) != SQLITE_OK) {
+        return out;
+    }
+    sqlite3_bind_int(stmt, 1, limit);
+
+    while (sqlite3_step(stmt) == SQLITE_ROW) {
+        AnalysisSummary summary;
+        auto textOrEmpty = [stmt](int col) {
+            const unsigned char* text = sqlite3_column_text(stmt, col);
+            return text ? std::string(reinterpret_cast<const char*>(text)) : std::string();
+        };
+        summary.id = textOrEmpty(0);
+        summary.fileName = textOrEmpty(1);
+        summary.mimeType = textOrEmpty(2);
+        summary.overallLabel = textOrEmpty(3);
+        summary.overallScore = sqlite3_column_double(stmt, 4);
+        summary.createdAt = textOrEmpty(5);
+        out.push_back(std::move(summary));
+    }
+    sqlite3_finalize(stmt);
+    return out;
 }
 
 } // namespace fakede

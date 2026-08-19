@@ -4,9 +4,11 @@ AI/Fake/Altered File Detector — a C++ analysis engine plus a React frontend th
 inspects an uploaded file and returns a fused, evidence-based verdict (never a bare
 yes/no) on whether it's authentic, AI-generated, or altered.
 
-**Status: Phases 1-4 done — images, text, PDFs, audio (WAV), and video (MP4).** See
-[docs/ROADMAP.md](docs/ROADMAP.md) for what's next (product hardening) and
-[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for how the pieces fit together.
+**Status: Phases 1-4 done — images, text, PDFs, audio (WAV), and video (MP4). Phase 5
+(product hardening) in progress** — API-key auth and a history dashboard are live; async
+job progress and fusion calibration remain open. See [docs/ROADMAP.md](docs/ROADMAP.md)
+for the full breakdown and [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for how the
+pieces fit together.
 
 ## Why trust this over a black-box "AI or not" badge?
 
@@ -40,6 +42,13 @@ cmake --build build --config Release
 The engine runs fine without any ONNX models fetched — each model-backed analyzer
 reports itself unavailable and every other analyzer still produces a verdict.
 
+By default the engine has no auth and allows any CORS origin (`*`) - fine for local
+dev. To lock it down: set `FAKEDE_API_KEY` to require an `X-API-Key` header on every
+`/api/v1/*` request except `/health`, and `FAKEDE_ALLOWED_ORIGIN` to a specific origin
+instead of the wildcard. See "Why auth is a single shared secret" in
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for what this does and doesn't protect
+against.
+
 ### Frontend (React)
 
 ```powershell
@@ -47,6 +56,9 @@ cd web
 npm install
 npm run dev                          # http://localhost:5173, proxies /api -> :8080
 ```
+
+If the engine is running with `FAKEDE_API_KEY` set, create `web/.env.local` with
+`VITE_FAKEDE_API_KEY=<same key>` (gitignored) so the frontend's requests carry it too.
 
 ## Repo layout
 

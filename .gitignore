@@ -37,6 +37,7 @@ web/*.local
 # --- OS / editor ---
 .vs/
 .vscode/
+.claude/
 *.user
 Thumbs.db
 .DS_Store

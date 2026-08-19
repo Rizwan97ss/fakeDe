@@ -2,6 +2,8 @@
 
 #include <drogon/MultiPart.h>
 
+#include <algorithm>
+
 using namespace drogon;
 
 namespace fakede {
@@ -56,7 +58,9 @@ void AnalysisController::handleAnalyze(const HttpRequestPtr& req,
     const nlohmann::json verdictJson = verdict.toJson();
     const std::string verdictStr = verdictJson.dump();
 
-    const std::string id = jobStore_->saveResult(input.fileName, input.mimeType, verdictStr);
+    const std::string id =
+        jobStore_->saveResult(input.fileName, input.mimeType, verdictStr, toString(verdict.overallLabel),
+                               verdict.overallScore);
 
     nlohmann::json responseJson = verdictJson;
     responseJson["id"] = id;
@@ -72,8 +76,8 @@ void AnalysisController::handleAnalyze(const HttpRequestPtr& req,
 void AnalysisController::handleGetResult(const HttpRequestPtr&,
                                           std::function<void(const HttpResponsePtr&)>&& callback,
                                           std::string id) const {
-    const auto verdictJson = jobStore_->getResultJson(id);
-    if (!verdictJson) {
+    const auto stored = jobStore_->getResult(id);
+    if (!stored) {
         auto resp = HttpResponse::newHttpResponse();
         resp->setStatusCode(k404NotFound);
         resp->setContentTypeCode(CT_APPLICATION_JSON);
@@ -82,9 +86,56 @@ void AnalysisController::handleGetResult(const HttpRequestPtr&,
         return;
     }
 
+    // Re-attach the same id/fileName/detectedMimeType fields the original POST
+    // /analyze response carried, so a result reopened from history (GET) has the same
+    // shape the frontend's AnalysisResponse type expects as one freshly analyzed.
+    nlohmann::json responseJson = nlohmann::json::parse(stored->verdictJson, nullptr, false);
+    if (responseJson.is_discarded()) {
+        auto resp = HttpResponse::newHttpResponse();
+        resp->setStatusCode(k500InternalServerError);
+        resp->setContentTypeCode(CT_APPLICATION_JSON);
+        resp->setBody(R"({"error":"stored result is corrupted"})");
+        callback(resp);
+        return;
+    }
+    responseJson["id"] = id;
+    responseJson["fileName"] = stored->fileName;
+    responseJson["detectedMimeType"] = stored->mimeType;
+
     auto resp = HttpResponse::newHttpResponse();
     resp->setContentTypeCode(CT_APPLICATION_JSON);
-    resp->setBody(*verdictJson);
+    resp->setBody(responseJson.dump());
+    callback(resp);
+}
+
+void AnalysisController::handleListRecent(const HttpRequestPtr& req,
+                                           std::function<void(const HttpResponsePtr&)>&& callback) const {
+    int limit = 20;
+    const std::string& limitParam = req->getParameter("limit");
+    if (!limitParam.empty()) {
+        try {
+            limit = std::stoi(limitParam);
+        } catch (const std::exception&) {
+            // keep default on unparsable input
+        }
+    }
+    limit = std::clamp(limit, 1, 100);
+
+    nlohmann::json items = nlohmann::json::array();
+    for (const auto& row : jobStore_->listRecent(limit)) {
+        items.push_back({
+            {"id", row.id},
+            {"fileName", row.fileName},
+            {"mimeType", row.mimeType},
+            {"overallLabel", row.overallLabel},
+            {"overallScore", row.overallScore},
+            {"createdAt", row.createdAt},
+        });
+    }
+
+    auto resp = HttpResponse::newHttpResponse();
+    resp->setContentTypeCode(CT_APPLICATION_JSON);
+    resp->setBody(nlohmann::json{{"results", items}}.dump());
     callback(resp);
 }
 
