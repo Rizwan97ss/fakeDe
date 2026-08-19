@@ -22,6 +22,55 @@ licenses, which is disqualifying for a monetized/public product.
 **Explicitly rejected**: [`PeterWang512/CNNDetection`](https://github.com/PeterWang512/CNNDetection) — CC BY-NC-SA 4.0,
 non-commercial only, disqualifying for this product's stated ambition.
 
+**Known, confirmed gap (2026-08-19): unreliable against modern commercial generators.** A user
+confirmed a real DALL-E 3 (via ChatGPT) image was scored as "very likely a real photo" by this
+classifier (0.0 fake-probability at 0.85 self-confidence), while 4 of the image pipeline's other 5
+signals correctly leaned toward "AI/edited". This is not a bug specific to our integration —
+research below confirms it's an industry-wide gap. `AiGeneratedModelAnalyzer` and
+`VideoAiFrameAnalyzer` now carry an in-product caveat on their "looks authentic" reading for this
+reason (see their explanation strings).
+
+**Investigated and explicitly not integrated as a replacement/addition (2026-08-19):**
+
+- A comprehensive 2026 benchmark ([arXiv:2602.07814](https://arxiv.org/html/2602.07814v1)) tested 23
+  open-source detector variants across 16 methods (PatchCraft, AIDE, CNNSpot, SPAI, Effort,
+  ForgeLens, DRCT, FreDect, Gram, LGrad, Fusing, UnivFD (this project's model family), Community-Forensics,
+  SAFE, Forensic-MoE, and others). **Every one of them performs badly against current commercial
+  generators**: ~31% mean accuracy on DALL-E 3, ~24% on Midjourney v7, 18-30% on Flux/Firefly v4 —
+  all below chance. The best overall performer, Community-Forensics, still only reaches 35-42% on
+  the newest generators despite 75% mean accuracy across the full benchmark. This is a real,
+  current, industry-wide ceiling, not a gap specific to what this project has integrated.
+  - Community-Forensics itself was ruled out immediately: it's primarily distributed as a *dataset*
+    (`OwensLab/CommunityForensics` on Hugging Face) under CC BY-NC-SA 4.0 — non-commercial,
+    same disqualifying reason as CNNDetection above — not a ready-to-use permissively-licensed model.
+- [`shilinyan99/AIDE`](https://github.com/shilinyan99/AIDE) (ICLR 2025) was the most promising
+  concrete candidate found: MIT-licensed, pretrained weights available, evaluated including
+  Midjourney (though not confirmed against DALL-E 3). Ruled out after reading the actual source
+  (`models/AIDE.py`, `data/dct.py`), not just the README, because it turned out impractical for
+  this project's deployment shape:
+  - Backbone is OpenCLIP's `convnext_xxlarge` — several GB on its own, far larger than the ~350MB
+    CLIP ViT-L/14 already in use, plus two full ResNet-50 branches processing SRM-noise-filtered
+    patches.
+  - Preprocessing is not resize+normalize — `DCT_base_Rec_Module` unfolds the image into
+    overlapping windows, scores each by a custom DCT-energy heuristic, sorts them, and selects the
+    "smoothest" and "busiest" patches to feed the network. Faithfully reproducing this exactly in
+    C++ (this project has no Python at runtime) would carry real bug risk, on the scale of or
+    beyond the RawNet2 quirk-replication work in `export_rawnet2.py` — but for an unconfirmed,
+    likely-modest accuracy gain given the benchmark numbers above.
+  - CPU-only inference (this project's ONNX Runtime deployment target, no GPU) with a model this
+    large would likely be far slower than acceptable for a synchronous HTTP request.
+- [`mever-team/spai`](https://github.com/mever-team/spai) (CVPR 2025, Apache 2.0) was noted as a
+  lighter-looking alternative (ViT-B/16-based vs. AIDE's ConvNeXt-XXLarge) but its preprocessing
+  pipeline wasn't clearly documented and wasn't source-inspected before the investigation was
+  stopped — a legitimate next candidate if this gets revisited, but not vetted enough to integrate.
+
+**Conclusion, stated plainly**: given even the best current open-source system tops out around
+35-42% on today's leading commercial generators, swapping or adding a model right now has a poor
+effort/risk-to-payoff ratio. The honest fix available today is the in-product caveat above plus
+leaning on the classical signals (which did correctly flag the confirmed DALL-E 3 test case) —
+not a black-box model upgrade that wouldn't reliably solve the problem anyway. Revisit if a
+future open-source release meaningfully changes these numbers.
+
 ## Text: language-model perplexity
 
 | | |
@@ -81,6 +130,9 @@ weaker signal than they are for standalone images. Tracked as an open item below
 - Text (stronger method): [`ahans30/Binoculars`](https://github.com/ahans30/Binoculars), [`baoguangsheng/fast-detect-gpt`](https://github.com/baoguangsheng/fast-detect-gpt)
 - Audio (stronger/ensemble method): [`clovaai/aasist`](https://github.com/clovaai/aasist) - graph-attention layers make its ONNX export a real open question, unlike RawNet2 above
 - Video (dedicated model): [`SCLBD/DeepfakeBench`](https://github.com/SCLBD/DeepfakeBench) unified pretrained release, Self-Blended Images (SBI) - would replace/augment the per-frame image-classifier reuse described above with a model actually trained on video manipulation artifacts
+- Image (modern-generator coverage): investigated and explicitly deferred, not just unscheduled -
+  see "Known, confirmed gap" and "Investigated and explicitly not integrated" above for why AIDE
+  and SPAI weren't adopted, and the industry-wide benchmark numbers behind that call
 
 License and conversion notes for each of these get added here when integrated —
 not before, so this file never claims more than what's actually integrated.

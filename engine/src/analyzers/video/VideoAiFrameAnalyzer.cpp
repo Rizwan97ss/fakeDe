@@ -61,8 +61,11 @@ Evidence VideoAiFrameAnalyzer::analyze(const AnalysisInput& input) const {
     std::ostringstream explanation;
     explanation << "We checked " << frameScores.size() << " frames from this video using our AI-image "
                 << "detector. On average, the frames look like "
-                << (meanScore > 0.6 ? "they were AI-generated rather than real camera footage."
-                                    : "real camera footage, not AI-generated.");
+                << (meanScore > 0.6
+                        ? "they were AI-generated rather than real camera footage."
+                        : "real camera footage, not AI-generated. Note: this check is known to be less "
+                          "reliable against newer AI video/image tools, so this reading is weaker evidence "
+                          "than a \"looks AI-made\" one would be.");
     evidence.explanation = explanation.str();
     evidence.rawDetails["sampledFrames"] = frameScores.size();
     evidence.rawDetails["frameScoreStd"] = stdScore;

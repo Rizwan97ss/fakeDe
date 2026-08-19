@@ -92,7 +92,9 @@ Evidence AiGeneratedModelAnalyzer::analyze(const AnalysisInput& input) const {
         ? "We ran this image through a model trained to recognize AI-generated pictures (from tools like "
           "Midjourney, DALL-E, or Stable Diffusion). It thinks this image was very likely made by AI."
         : "We ran this image through a model trained to recognize AI-generated pictures. It thinks this "
-          "image was very likely a real photo, not AI-made.";
+          "image was very likely a real photo, not AI-made. Note: this particular check was trained on "
+          "older AI-image tools and is known to be less reliable against newer ones like DALL-E 3 or "
+          "Midjourney v6+ - a \"real photo\" reading here is weaker evidence than a \"made by AI\" one.";
     evidence.rawDetails["fakeProbability"] = fakeProbability;
 
     return evidence;
