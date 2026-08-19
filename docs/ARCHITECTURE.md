@@ -106,6 +106,31 @@ low-confidence instead of a flat number that hides the disagreement. This is a
 structural fix, not a statistical one - it doesn't need labeled data, unlike the
 Platt/isotonic calibration mentioned above, which still does.
 
+## Why C2PA Content Credentials are detected via byte-scan, not a JUMBF/CBOR parser
+
+A user found that a competitor tool caught a real DALL-E 3 image not with a smarter ML classifier,
+but by reading its **C2PA Content Credentials** — a provenance manifest OpenAI, Adobe, and others
+now embed directly in generated/captured images, cryptographically signed via COSE. This project's
+`AiGeneratedModelAnalyzer` (a probabilistic classifier) had no way to catch that.
+
+`C2paManifestAnalyzer` (`engine/src/analyzers/image/C2paManifestAnalyzer.cpp`) closes that gap the
+same way `PdfForensicsAnalyzer` handles PDFs: a plain substring scan over the raw file bytes for
+known C2PA/JUMBF markers (`c2pa.assertions`, `c2pa.claim`, `urn:c2pa`, `claim_generator`, and the
+IPTC `digitalSourceType` values `trainedAlgorithmicMedia`/`compositeWithTrainedAlgorithmicMedia`
+that declare AI origin), rather than a full JUMBF-box/CBOR-assertion parser. This works because
+C2PA assertions are CBOR-encoded, and CBOR text strings carry their raw UTF-8 bytes with no
+escaping — so the marker strings are present verbatim in the file even though the container format
+is binary, not JSON. **This is deliberately presence-detection, not cryptographic verification**:
+it does not validate the COSE signature or check the certificate chain, so a forged/stripped
+manifest could theoretically fool it. When markers are found and explicit, it's unusually strong
+evidence (the file is stating its own origin); when absent, that says almost nothing — most images
+never carry this, and it's expected to be stripped by most re-saves, format conversions, or
+re-uploads (not independently confirmed byte-for-byte in this project yet - reasoned from how
+JUMBF embedding works, not verified against a real stripped example). Given
+`FusionEngine::weightFor()` weights it at 1.7 — above even `ai-model:*`'s 1.5 — but its own
+confidence collapses to ~0.05 when nothing is found, so this high weight only ever matters when the
+signal actually fires.
+
 ## Data flow (Phase 1: images)
 
 1. `POST /api/v1/analyze` (multipart) hits `AnalysisController::handleAnalyze`.

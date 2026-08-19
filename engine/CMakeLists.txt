@@ -61,6 +61,7 @@ add_executable(fakede_engine
     src/util/Base64.cpp
     src/api/AnalysisController.cpp
     src/analyzers/image/MetadataAnalyzer.cpp
+    src/analyzers/image/C2paManifestAnalyzer.cpp
     src/analyzers/image/ElaAnalyzer.cpp
     src/analyzers/image/FrequencyAnalyzer.cpp
     src/analyzers/image/NoiseResidualAnalyzer.cpp

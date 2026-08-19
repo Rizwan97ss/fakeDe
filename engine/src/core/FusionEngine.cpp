@@ -32,6 +32,13 @@ double stddev(const std::vector<double>& values) {
 } // namespace
 
 double FusionEngine::weightFor(const std::string& analyzerId) const {
+    // A file's own embedded C2PA Content Credentials, when explicit, is the file
+    // stating its own origin directly - stronger per-signal than a probabilistic
+    // classifier's guess, so it outranks even the ai-model:* tier. Its own confidence
+    // score already crashes to near-zero when no manifest is found (see
+    // C2paManifestAnalyzer), so this high weight only ever matters when it actually
+    // has something to say.
+    if (analyzerId == "c2pa-manifest") return 1.7;
     if (analyzerId.rfind("ai-model:", 0) == 0) return 1.5;  // purpose-built classifier
     if (analyzerId == "metadata") return 0.8;                // easy to strip/forge, weight down
     if (analyzerId == "noise-residual") return 0.9;

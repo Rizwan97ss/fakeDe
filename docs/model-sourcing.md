@@ -30,6 +30,16 @@ research below confirms it's an industry-wide gap. `AiGeneratedModelAnalyzer` an
 `VideoAiFrameAnalyzer` now carry an in-product caveat on their "looks authentic" reading for this
 reason (see their explanation strings).
 
+**Real mitigation added (2026-08-19), not a model swap**: the same user found that a competitor
+tool caught this exact case not with a better classifier, but by reading the image's embedded
+**C2PA Content Credentials** — provenance metadata OpenAI signs into its generated images.
+`C2paManifestAnalyzer` now checks for this directly via byte-scan (see "Why C2PA Content
+Credentials are detected via byte-scan" in `docs/ARCHITECTURE.md`) and is weighted above even
+`ai-model:*` in fusion when it fires. This only helps when the manifest survives intact (it's
+easily stripped by re-saving/converting), so it complements rather than replaces the classifier
+gap above — not yet verified against the user's actual original file, only against synthetic
+test markers (see project memory for follow-up status).
+
 **Investigated and explicitly not integrated as a replacement/addition (2026-08-19):**
 
 - A comprehensive 2026 benchmark ([arXiv:2602.07814](https://arxiv.org/html/2602.07814v1)) tested 23

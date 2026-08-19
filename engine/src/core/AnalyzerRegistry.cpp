@@ -8,6 +8,7 @@
 #include "analyzers/audio/VoiceNaturalnessAnalyzer.h"
 #include "analyzers/document/PdfForensicsAnalyzer.h"
 #include "analyzers/image/AiGeneratedModelAnalyzer.h"
+#include "analyzers/image/C2paManifestAnalyzer.h"
 #include "analyzers/image/ElaAnalyzer.h"
 #include "analyzers/image/FrequencyAnalyzer.h"
 #include "analyzers/image/MetadataAnalyzer.h"
@@ -43,6 +44,7 @@ AnalyzerRegistry buildDefaultRegistry(const std::string& modelsDir) {
     // analyzers can reuse these exact instances (same lifetime as the registry
     // itself) instead of duplicating their logic or loading the ONNX model twice.
     auto metadataAnalyzer = std::make_unique<MetadataAnalyzer>();
+    auto c2paAnalyzer = std::make_unique<C2paManifestAnalyzer>();
     auto elaAnalyzer = std::make_unique<ElaAnalyzer>();
     auto freqAnalyzer = std::make_unique<FrequencyAnalyzer>();
     auto noiseAnalyzer = std::make_unique<NoiseResidualAnalyzer>();
@@ -50,6 +52,7 @@ AnalyzerRegistry buildDefaultRegistry(const std::string& modelsDir) {
     const FrequencyAnalyzer* freqPtr = freqAnalyzer.get();
     const NoiseResidualAnalyzer* noisePtr = noiseAnalyzer.get();
     registry.registerAnalyzer(std::move(metadataAnalyzer));
+    registry.registerAnalyzer(std::move(c2paAnalyzer));
     registry.registerAnalyzer(std::move(elaAnalyzer));
     registry.registerAnalyzer(std::move(freqAnalyzer));
     registry.registerAnalyzer(std::move(noiseAnalyzer));
