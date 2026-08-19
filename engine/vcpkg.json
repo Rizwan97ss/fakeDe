@@ -1,0 +1,17 @@
+{
+  "name": "fakede-engine",
+  "version": "0.1.0",
+  "builtin-baseline": "06d00ffa491e4668627728f14b891d22c6fea146",
+  "dependencies": [
+    "drogon",
+    {
+      "name": "opencv4",
+      "default-features": false,
+      "features": ["jpeg", "png", "tiff", "webp"]
+    },
+    "exiv2",
+    "libmagic",
+    "sqlite3",
+    "nlohmann-json"
+  ]
+}

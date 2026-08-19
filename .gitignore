@@ -1,0 +1,41 @@
+# --- C++ engine ---
+engine/vcpkg/
+engine/vcpkg_installed/
+engine/onnxruntime/
+engine/build/
+engine/out/
+engine/models/**/*.onnx
+engine/models/**/*.pt
+engine/models/**/*.pth
+engine/scripts/export_to_onnx/.venv/
+engine/scripts/export_to_onnx/__pycache__/
+*.obj
+*.o
+*.exe
+*.pdb
+*.ilk
+*.exp
+*.lib
+*.dll
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+compile_commands.json
+
+# --- React frontend ---
+web/node_modules/
+web/dist/
+web/.vite/
+web/*.local
+
+# --- Data ---
+*.sqlite
+*.sqlite3
+*.db
+
+# --- OS / editor ---
+.vs/
+.vscode/
+*.user
+Thumbs.db
+.DS_Store
