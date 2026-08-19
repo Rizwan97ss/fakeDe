@@ -28,7 +28,11 @@ void addCorsHeaders(const drogon::HttpResponsePtr& resp) {
 } // namespace
 
 int main() {
+#ifdef FAKEDE_DEFAULT_MODELS_DIR
+    const std::string modelsDir = envOr("FAKEDE_MODELS_DIR", FAKEDE_DEFAULT_MODELS_DIR);
+#else
     const std::string modelsDir = envOr("FAKEDE_MODELS_DIR", "models");
+#endif
     const std::string dbPath = envOr("FAKEDE_DB_PATH", "fakede.sqlite3");
     const uint16_t port = static_cast<uint16_t>(std::stoi(envOr("FAKEDE_PORT", "8080")));
 

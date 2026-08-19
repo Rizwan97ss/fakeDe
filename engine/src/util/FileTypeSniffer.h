@@ -21,6 +21,9 @@ public:
     // Returns e.g. "image/jpeg". Returns "application/octet-stream" if no known
     // signature matches.
     std::string detectMimeType(const std::vector<uint8_t>& bytes) const;
+
+private:
+    bool looksLikePlainText(const std::vector<uint8_t>& bytes) const;
 };
 
 } // namespace fakede

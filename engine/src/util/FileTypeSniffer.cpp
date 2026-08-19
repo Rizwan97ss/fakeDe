@@ -33,7 +33,33 @@ std::string FileTypeSniffer::detectMimeType(const std::vector<uint8_t>& bytes) c
         std::memcmp(bytes.data() + 8, "WEBP", 4) == 0) {
         return "image/webp";
     }
+    if (bytes.size() >= 5 && std::memcmp(bytes.data(), "%PDF-", 5) == 0) {
+        return "application/pdf";
+    }
+    if (looksLikePlainText(bytes)) {
+        return "text/plain";
+    }
     return "application/octet-stream";
+}
+
+bool FileTypeSniffer::looksLikePlainText(const std::vector<uint8_t>& bytes) const {
+    if (bytes.empty()) return false;
+    // Sample the first 8KB: printable ASCII, common whitespace, or valid UTF-8
+    // continuation bytes. A binary file (renamed .exe, etc.) fails this near-instantly
+    // since NUL bytes and most control characters are disqualifying.
+    const size_t sampleSize = std::min<size_t>(bytes.size(), 8192);
+    size_t suspicious = 0;
+    for (size_t i = 0; i < sampleSize; ++i) {
+        const uint8_t b = bytes[i];
+        const bool printableAscii = b == '\t' || b == '\n' || b == '\r' || (b >= 0x20 && b < 0x7F);
+        const bool utf8Continuation = b >= 0x80; // not validated byte-by-byte, just not an outright control byte
+        if (!printableAscii && !utf8Continuation) {
+            ++suspicious;
+        }
+        if (b == 0x00) return false; // NUL is an unambiguous binary-file signal
+    }
+    // Allow a small margin for the occasional stray byte rather than requiring perfection.
+    return suspicious == 0 || (static_cast<double>(suspicious) / sampleSize) < 0.01;
 }
 
 } // namespace fakede

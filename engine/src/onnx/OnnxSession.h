@@ -33,6 +33,12 @@ public:
     std::optional<std::vector<float>> runSingleInputOutput(const std::vector<float>& inputData,
                                                              const std::vector<int64_t>& inputShape) const;
 
+    // Same idea but for int64 token-id inputs (e.g. a causal LM's input_ids) producing
+    // float32 output (logits). Kept as a separate method rather than a template/variant
+    // since these are the only two tensor shapes this codebase's models need.
+    std::optional<std::vector<float>> runInt64InputFloatOutput(const std::vector<int64_t>& inputIds,
+                                                                 const std::vector<int64_t>& inputShape) const;
+
 private:
     std::unique_ptr<Ort::Env> env_;
     std::unique_ptr<Ort::Session> session_;

@@ -5,6 +5,7 @@ engine/onnxruntime/
 engine/build/
 engine/out/
 engine/models/**/*.onnx
+engine/models/**/*.onnx.data
 engine/models/**/*.pt
 engine/models/**/*.pth
 engine/scripts/export_to_onnx/.venv/

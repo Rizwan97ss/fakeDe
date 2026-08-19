@@ -69,6 +69,13 @@ add_executable(fakede_engine
 
 target_include_directories(fakede_engine PRIVATE src)
 
+# Bake the source-tree models/ path in as the default so the engine finds its models
+# regardless of the process's working directory (Visual Studio's multi-config layout
+# runs the exe from build/Release/, not engine/) - FAKEDE_MODELS_DIR still overrides
+# this for real deployments where the exe ships without the source tree alongside it.
+target_compile_definitions(fakede_engine PRIVATE
+    FAKEDE_DEFAULT_MODELS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/models")
+
 target_link_libraries(fakede_engine PRIVATE
     Drogon::Drogon
     opencv_core opencv_imgproc opencv_imgcodecs
