@@ -43,10 +43,32 @@ opset-18-only `num_outputs` attribute, which ONNX Runtime rejected at load time.
 Exporting directly at opset 18 avoids the conversion path entirely. Both export scripts
 now default to opset 18 for this reason.
 
-## Not yet integrated (Phase 3-4 roadmap — see docs/ROADMAP.md)
+## Audio: synthetic-speech (anti-spoofing) classifier
+
+| | |
+|---|---|
+| Model | RawNet2 (Tak et al., ICASSP 2021, arXiv:2011.01108) - raw-waveform CNN + GRU with a fixed (non-learned) SincNet-style front end |
+| Source | [asvspoof-challenge/2021](https://github.com/asvspoof-challenge/2021) `LA/Baseline-RawNet2/model.py` |
+| Checkpoint | [`pre_trained_DF_RawNet2.zip`](https://www.asvspoof.org/asvspoof2021/pre_trained_DF_RawNet2.zip), the official ASVspoof2021 DF-track pretrained release |
+| License | MIT (`asvspoof-challenge/2021` repo, copyright 2021 eurecom-asp) |
+| Conversion | `engine/scripts/export_to_onnx/export_rawnet2.py` - vendors the model class (self-contained script, not a repo dependency) with one deliberate change (returns raw logits, not the original's final LogSoftmax) and one deliberate *non*-change: an upstream quirk in `Residual_block.forward()` where `bn1`+`lrelu` are computed then discarded (conv1 always runs on the raw input) is faithfully reproduced rather than "fixed", since the released weights were trained against that exact graph |
+| Input | `float32[1,64600]` raw waveform, 16kHz mono, padded (tiled) or cropped to exactly 64600 samples (~4s) - matches the official baseline's `pad()` convention in `data_utils.py` |
+| Output | `float32[1,2]` raw logits (index 0 = bonafide/real, index 1 = spoof/fake per ASVspoof convention); softmax applied in `AntiSpoofingAnalyzer` |
+| Consumed by | `engine/src/analyzers/audio/AntiSpoofingAnalyzer.cpp` |
+| Status | **Live** — fetched and verified working (2026-08-19): loads, runs, and produces confident, sensible (non-degenerate) output on test audio. Not yet validated for actual bonafide/spoof *discrimination* against real speech samples - the test inputs used were synthetic sine tones, not real human speech or real TTS output, so this confirms the pipeline works end-to-end but not yet its real-world accuracy. |
+
+**Export gotcha worth knowing (different from the opset-18 one above)**: `SincConv`'s
+filter bank is built with `numpy` operations (`np.sinc`/`np.hamming`) from fixed,
+input-independent hyperparameters - `torch.onnx.export`'s default "dynamo" exporter
+doesn't tolerate that. The legacy TorchScript-tracing exporter (`dynamo=False`) handles
+it correctly, and is semantically the *right* choice here (not a workaround): since the
+filters are fixed after training, baking their traced values in as graph constants is
+exactly correct.
+
+## Not yet integrated (Phase 4 roadmap — see docs/ROADMAP.md)
 
 - Text (stronger method): [`ahans30/Binoculars`](https://github.com/ahans30/Binoculars), [`baoguangsheng/fast-detect-gpt`](https://github.com/baoguangsheng/fast-detect-gpt)
-- Audio: [`clovaai/aasist`](https://github.com/clovaai/aasist), RawNet2 anti-spoofing (Tak et al., arXiv:2011.01108)
+- Audio (stronger/ensemble method): [`clovaai/aasist`](https://github.com/clovaai/aasist) - graph-attention layers make its ONNX export a real open question, unlike RawNet2 above
 - Video: [`SCLBD/DeepfakeBench`](https://github.com/SCLBD/DeepfakeBench) unified pretrained release, Self-Blended Images (SBI)
 
 License and conversion notes for each of these get added here when that phase starts —

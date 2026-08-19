@@ -16,6 +16,16 @@ official prebuilt Windows x64 distribution directly from the `microsoft/onnxrunt
 GitHub releases, unpacked into `engine/onnxruntime/` (gitignored) and linked manually
 in `CMakeLists.txt` as an imported target.
 
+## Why WAV decoding is a vendored single header, not a vcpkg dependency
+
+`engine/third_party/dr_wav.h` (public domain/MIT-0) decodes WAV directly with zero
+external build dependency. This project previously dropped a vcpkg `libmagic`
+dependency for the same reason: autotools-style ports that compile a native helper
+tool from source and then execute it mid-build turned out to be a real, repeated
+source of environment friction on Windows. For a single well-scoped format, a vendored
+header sidesteps that whole class of risk entirely. Revisit with a real vcpkg audio
+library (e.g. libsndfile) if/when broader format support (MP3, FLAC, etc.) is needed.
+
 ## Every other C++ dependency comes from vcpkg (manifest mode)
 
 `engine/vcpkg.json` pins dependencies; `engine/vcpkg/` is a local vcpkg checkout

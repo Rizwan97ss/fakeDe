@@ -1,6 +1,6 @@
 # Roadmap
 
-Phases 1-2 are built and verified working. Phases 3-4 below are architected for (every
+Phases 1-3 are built and verified working. Phase 4 below is architected for (every
 new analyzer just implements `IAnalyzer` and gets registered — see
 `docs/ARCHITECTURE.md`) but not yet built.
 
@@ -30,15 +30,25 @@ new analyzer just implements `IAnalyzer` and gets registered — see
   over-claiming. Does not yet extract embedded text/images to reuse the text/image
   pipelines — that's still open if it turns out to matter in practice.
 
-## Phase 3 — Audio
+## Phase 3 — Audio (done)
 
-- RawNet2 anti-spoofing (Tak et al., arXiv:2011.01108) first — simpler architecture
-  (conv+GRU, no graph attention), more likely to export cleanly to ONNX.
-- [`clovaai/aasist`](https://github.com/clovaai/aasist) as a follow-up ensemble
-  addition once its graph-attention layers' ONNX export is proven out (flagged as a
-  real conversion risk, not assumed-solved).
-- This is where async job handling first becomes necessary for longer audio files —
-  see "Async & WebSocket" below.
+- **Classical, no model needed**: `VoiceNaturalnessAnalyzer` (frame-level jitter/shimmer
+  approximation via autocorrelation-based pitch tracking) and
+  `SpliceDetectionAnalyzer` (noise-floor consistency across quiet segments). Both
+  verified against synthetic test tones with correct, sensible directional behavior.
+- **ML**: `AntiSpoofingAnalyzer` runs RawNet2 (Tak et al., arXiv:2011.01108) directly
+  on the raw waveform. Its graph-attention cousin, AASIST, was *not* attempted - see
+  `docs/model-sourcing.md` for why RawNet2's simpler architecture made it tractable
+  and what AASIST would need. Verified loading, running, and producing sensible
+  (non-degenerate) output; **not yet validated for real bonafide/spoof discrimination
+  accuracy** against actual speech samples (test inputs were synthetic tones) - a real
+  open item, not a completed accuracy validation.
+- Format support: WAV only, decoded via a vendored single-header library
+  (`engine/third_party/dr_wav.h`, public domain) rather than a new vcpkg dependency -
+  see `docs/ARCHITECTURE.md` for why that tradeoff was made repeatedly in this project.
+- Still synchronous (no job queue/WebSocket yet) - audio clips tested so far are short
+  enough that this wasn't yet a forcing function. Revisit if real usage needs it before
+  Phase 4 gets there anyway.
 
 ## Phase 4 — Video
 

@@ -28,10 +28,11 @@ std::string FileTypeSniffer::detectMimeType(const std::vector<uint8_t>& bytes) c
     if (startsWith(bytes, {0x49, 0x49, 0x2A, 0x00}) || startsWith(bytes, {0x4D, 0x4D, 0x00, 0x2A})) {
         return "image/tiff";
     }
-    // WebP: "RIFF" + 4-byte size + "WEBP", so the signature isn't contiguous.
-    if (bytes.size() >= 12 && std::memcmp(bytes.data(), "RIFF", 4) == 0 &&
-        std::memcmp(bytes.data() + 8, "WEBP", 4) == 0) {
-        return "image/webp";
+    // WebP and WAV share RIFF's container signature ("RIFF" + 4-byte size + a
+    // 4-byte format tag), so both checks look at the same offset.
+    if (bytes.size() >= 12 && std::memcmp(bytes.data(), "RIFF", 4) == 0) {
+        if (std::memcmp(bytes.data() + 8, "WEBP", 4) == 0) return "image/webp";
+        if (std::memcmp(bytes.data() + 8, "WAVE", 4) == 0) return "audio/wav";
     }
     if (bytes.size() >= 5 && std::memcmp(bytes.data(), "%PDF-", 5) == 0) {
         return "application/pdf";

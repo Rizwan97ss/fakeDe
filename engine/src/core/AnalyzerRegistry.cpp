@@ -3,6 +3,9 @@
 #include <algorithm>
 #include <filesystem>
 
+#include "analyzers/audio/AntiSpoofingAnalyzer.h"
+#include "analyzers/audio/SpliceDetectionAnalyzer.h"
+#include "analyzers/audio/VoiceNaturalnessAnalyzer.h"
 #include "analyzers/document/PdfForensicsAnalyzer.h"
 #include "analyzers/image/AiGeneratedModelAnalyzer.h"
 #include "analyzers/image/ElaAnalyzer.h"
@@ -52,6 +55,14 @@ AnalyzerRegistry buildDefaultRegistry(const std::string& modelsDir) {
     registry.registerAnalyzer(std::make_unique<TextPerplexityAnalyzer>(
         (textModelsDir / "gpt2.onnx").string(), (textModelsDir / "vocab.json").string(),
         (textModelsDir / "merges.txt").string()));
+
+    // Phase 3: audio.
+    registry.registerAnalyzer(std::make_unique<VoiceNaturalnessAnalyzer>());
+    registry.registerAnalyzer(std::make_unique<SpliceDetectionAnalyzer>());
+
+    const std::filesystem::path audioModelPath =
+        std::filesystem::path(modelsDir) / "audio" / "antispoofing.onnx";
+    registry.registerAnalyzer(std::make_unique<AntiSpoofingAnalyzer>(audioModelPath.string()));
 
     return registry;
 }

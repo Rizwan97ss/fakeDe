@@ -69,9 +69,14 @@ add_executable(fakede_engine
     src/analyzers/text/Gpt2Tokenizer.cpp
     src/analyzers/text/TextPerplexityAnalyzer.cpp
     src/analyzers/document/PdfForensicsAnalyzer.cpp
+    src/util/AudioDecoder.cpp
+    src/analyzers/audio/AudioFrameAnalysis.cpp
+    src/analyzers/audio/VoiceNaturalnessAnalyzer.cpp
+    src/analyzers/audio/SpliceDetectionAnalyzer.cpp
+    src/analyzers/audio/AntiSpoofingAnalyzer.cpp
 )
 
-target_include_directories(fakede_engine PRIVATE src)
+target_include_directories(fakede_engine PRIVATE src third_party)
 
 # Bake the source-tree models/ path in as the default so the engine finds its models
 # regardless of the process's working directory (Visual Studio's multi-config layout

@@ -4,8 +4,8 @@ AI/Fake/Altered File Detector — a C++ analysis engine plus a React frontend th
 inspects an uploaded file and returns a fused, evidence-based verdict (never a bare
 yes/no) on whether it's authentic, AI-generated, or altered.
 
-**Status: Phases 1-2 done — images, text, and PDFs.** See [docs/ROADMAP.md](docs/ROADMAP.md)
-for what's next (audio, video) and [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for how
+**Status: Phases 1-3 done — images, text, PDFs, and audio (WAV).** See [docs/ROADMAP.md](docs/ROADMAP.md)
+for what's next (video) and [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for how
 the pieces fit together.
 
 ## Why trust this over a black-box "AI or not" badge?
@@ -13,11 +13,12 @@ the pieces fit together.
 Every verdict ships with the full breakdown of independent signals that produced it —
 for images: metadata forensics, Error Level Analysis, frequency-spectrum analysis,
 sensor-noise residuals, and a pretrained AI-image classifier; for text: stylometry and
-GPT-2 perplexity/burstiness; for PDFs: incremental-update revision forensics — each
-with its own score, confidence, and plain-language explanation. See
-[docs/model-sourcing.md](docs/model-sourcing.md) for exactly which models are
-integrated, their license, and how reliable each detection domain actually is (text is
-notably weaker than the others, and the UI says so).
+GPT-2 perplexity/burstiness; for PDFs: incremental-update revision forensics; for audio:
+jitter/shimmer voice-naturalness, noise-floor consistency, and a pretrained RawNet2
+anti-spoofing classifier — each with its own score, confidence, and plain-language
+explanation. See [docs/model-sourcing.md](docs/model-sourcing.md) for exactly which
+models are integrated, their license, and how reliable each detection domain actually
+is (text is notably weaker than the others, and the UI says so).
 
 ## Quickstart
 
@@ -28,7 +29,7 @@ cd engine
 .\scripts\bootstrap-vcpkg.ps1        # one-time: local vcpkg checkout
 .\vcpkg\vcpkg.exe install --triplet x64-windows --x-install-root=vcpkg_installed
 .\scripts\fetch_onnxruntime.ps1      # one-time: official ONNX Runtime prebuilt
-.\scripts\fetch_models.ps1           # optional: AI-image classifier + GPT-2 weights (see docs/model-sourcing.md)
+.\scripts\fetch_models.ps1           # optional: AI-image classifier, GPT-2, RawNet2 weights (see docs/model-sourcing.md)
 
 cmake -B build -S . -DCMAKE_BUILD_TYPE=Release
 cmake --build build --config Release
