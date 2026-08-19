@@ -14,6 +14,8 @@
 #include "analyzers/image/NoiseResidualAnalyzer.h"
 #include "analyzers/text/TextPerplexityAnalyzer.h"
 #include "analyzers/text/TextStylometryAnalyzer.h"
+#include "analyzers/video/VideoAiFrameAnalyzer.h"
+#include "analyzers/video/VideoTemporalConsistencyAnalyzer.h"
 
 namespace fakede {
 
@@ -36,16 +38,28 @@ std::vector<const IAnalyzer*> AnalyzerRegistry::analyzersFor(const std::string& 
 AnalyzerRegistry buildDefaultRegistry(const std::string& modelsDir) {
     AnalyzerRegistry registry;
 
-    // Classical forensic analyzers: no external assets, always available.
-    registry.registerAnalyzer(std::make_unique<MetadataAnalyzer>());
-    registry.registerAnalyzer(std::make_unique<ElaAnalyzer>());
-    registry.registerAnalyzer(std::make_unique<FrequencyAnalyzer>());
-    registry.registerAnalyzer(std::make_unique<NoiseResidualAnalyzer>());
+    // Classical forensic analyzers: no external assets, always available. Raw
+    // pointers are captured before moving into the registry so Phase 4's video
+    // analyzers can reuse these exact instances (same lifetime as the registry
+    // itself) instead of duplicating their logic or loading the ONNX model twice.
+    auto metadataAnalyzer = std::make_unique<MetadataAnalyzer>();
+    auto elaAnalyzer = std::make_unique<ElaAnalyzer>();
+    auto freqAnalyzer = std::make_unique<FrequencyAnalyzer>();
+    auto noiseAnalyzer = std::make_unique<NoiseResidualAnalyzer>();
+    const ElaAnalyzer* elaPtr = elaAnalyzer.get();
+    const FrequencyAnalyzer* freqPtr = freqAnalyzer.get();
+    const NoiseResidualAnalyzer* noisePtr = noiseAnalyzer.get();
+    registry.registerAnalyzer(std::move(metadataAnalyzer));
+    registry.registerAnalyzer(std::move(elaAnalyzer));
+    registry.registerAnalyzer(std::move(freqAnalyzer));
+    registry.registerAnalyzer(std::move(noiseAnalyzer));
 
     // ML analyzer: gracefully unavailable until scripts/fetch_models.ps1 has been run.
     const std::filesystem::path imageModelPath =
         std::filesystem::path(modelsDir) / "image" / "ai_image_classifier.onnx";
-    registry.registerAnalyzer(std::make_unique<AiGeneratedModelAnalyzer>(imageModelPath.string()));
+    auto aiImageAnalyzer = std::make_unique<AiGeneratedModelAnalyzer>(imageModelPath.string());
+    const AiGeneratedModelAnalyzer* aiImagePtr = aiImageAnalyzer.get();
+    registry.registerAnalyzer(std::move(aiImageAnalyzer));
 
     // Phase 2: text and documents.
     registry.registerAnalyzer(std::make_unique<TextStylometryAnalyzer>());
@@ -63,6 +77,11 @@ AnalyzerRegistry buildDefaultRegistry(const std::string& modelsDir) {
     const std::filesystem::path audioModelPath =
         std::filesystem::path(modelsDir) / "audio" / "antispoofing.onnx";
     registry.registerAnalyzer(std::make_unique<AntiSpoofingAnalyzer>(audioModelPath.string()));
+
+    // Phase 4: video. Reuses the image analyzers registered above (see the pointer
+    // capture at the top of this function) rather than duplicating their logic.
+    registry.registerAnalyzer(std::make_unique<VideoTemporalConsistencyAnalyzer>(elaPtr, freqPtr, noisePtr));
+    registry.registerAnalyzer(std::make_unique<VideoAiFrameAnalyzer>(aiImagePtr));
 
     return registry;
 }

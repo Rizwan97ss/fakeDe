@@ -47,6 +47,11 @@ int main() {
                   << (analyzer->isAvailable() ? "available" : "UNAVAILABLE (missing assets)") << "\n";
     }
 
+    // Drogon defaults to a 1MB max request body, which would silently reject most
+    // real photos/audio clips and essentially all video files. 200MB comfortably
+    // covers this project's supported file types without leaving the limit unbounded.
+    drogon::app().setClientMaxBodySize(200 * 1024 * 1024);
+
     drogon::app().registerPostHandlingAdvice(
         [](const drogon::HttpRequestPtr&, const drogon::HttpResponsePtr& resp) { addCorsHeaders(resp); });
 

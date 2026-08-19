@@ -4,9 +4,9 @@ AI/Fake/Altered File Detector — a C++ analysis engine plus a React frontend th
 inspects an uploaded file and returns a fused, evidence-based verdict (never a bare
 yes/no) on whether it's authentic, AI-generated, or altered.
 
-**Status: Phases 1-3 done — images, text, PDFs, and audio (WAV).** See [docs/ROADMAP.md](docs/ROADMAP.md)
-for what's next (video) and [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for how
-the pieces fit together.
+**Status: Phases 1-4 done — images, text, PDFs, audio (WAV), and video (MP4).** See
+[docs/ROADMAP.md](docs/ROADMAP.md) for what's next (product hardening) and
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for how the pieces fit together.
 
 ## Why trust this over a black-box "AI or not" badge?
 
@@ -15,8 +15,9 @@ for images: metadata forensics, Error Level Analysis, frequency-spectrum analysi
 sensor-noise residuals, and a pretrained AI-image classifier; for text: stylometry and
 GPT-2 perplexity/burstiness; for PDFs: incremental-update revision forensics; for audio:
 jitter/shimmer voice-naturalness, noise-floor consistency, and a pretrained RawNet2
-anti-spoofing classifier — each with its own score, confidence, and plain-language
-explanation. See [docs/model-sourcing.md](docs/model-sourcing.md) for exactly which
+anti-spoofing classifier; for video: per-frame reuse of the image forensic signals plus
+a frame-to-frame consistency check — each with its own score, confidence, and
+plain-language explanation. See [docs/model-sourcing.md](docs/model-sourcing.md) for exactly which
 models are integrated, their license, and how reliable each detection domain actually
 is (text is notably weaker than the others, and the UI says so).
 

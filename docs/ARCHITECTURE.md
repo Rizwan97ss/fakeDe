@@ -26,6 +26,18 @@ source of environment friction on Windows. For a single well-scoped format, a ve
 header sidesteps that whole class of risk entirely. Revisit with a real vcpkg audio
 library (e.g. libsndfile) if/when broader format support (MP3, FLAC, etc.) is needed.
 
+## Why video decoding uses OpenCV + Windows Media Foundation, not FFmpeg
+
+`VideoFrameSampler` (`engine/src/util/VideoFrameSampler.cpp`) opens files via
+`cv::VideoCapture(path, cv::CAP_MSMF)` — OpenCV's binding to Windows' built-in Media
+Foundation decoder, enabled by adding the `msmf` feature to the `opencv4` vcpkg port
+already in the dependency tree, rather than pulling in a separate FFmpeg/libav vcpkg
+port. FFmpeg's vcpkg port is large, slow to build, and (consistent with this project's
+`libmagic` experience) another autotools-adjacent surface for Windows build friction;
+MSMF is a real, already-present OS component with no extra dependency at all. The
+tradeoff: container/codec support is whatever MSMF has installed, not whatever FFmpeg
+can be built with. Revisit if a real usage pattern hits a codec MSMF can't decode.
+
 ## Every other C++ dependency comes from vcpkg (manifest mode)
 
 `engine/vcpkg.json` pins dependencies; `engine/vcpkg/` is a local vcpkg checkout
@@ -70,3 +82,11 @@ upgrading this is real future work, not a placeholder to hide.
 6. `JobStore` (SQLite) persists it, keyed by a generated id.
 7. The full `Verdict` JSON (plus `id`, `fileName`, `detectedMimeType`) is returned
    synchronously; `GET /api/v1/analyze/{id}` re-fetches it later.
+
+This same flow handles every later file type unchanged — text, PDFs, WAV audio, and
+MP4 video all go through the identical sniff → route → analyze → fuse → persist
+pipeline; only the registered `IAnalyzer` set differs. Video's per-frame analyzers
+(`VideoTemporalConsistencyAnalyzer`, `VideoAiFrameAnalyzer`) hold raw pointers into the
+already-constructed image analyzers so they can reuse `ElaAnalyzer`/`FrequencyAnalyzer`/
+`NoiseResidualAnalyzer`/`AiGeneratedModelAnalyzer` per sampled frame without duplicating
+any analysis logic — see the pointer-capture in `AnalyzerRegistry::buildDefaultRegistry()`.

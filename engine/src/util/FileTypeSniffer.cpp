@@ -37,6 +37,10 @@ std::string FileTypeSniffer::detectMimeType(const std::vector<uint8_t>& bytes) c
     if (bytes.size() >= 5 && std::memcmp(bytes.data(), "%PDF-", 5) == 0) {
         return "application/pdf";
     }
+    // MP4/MOV (ISO base media file format): a 4-byte box size, then "ftyp".
+    if (bytes.size() >= 8 && std::memcmp(bytes.data() + 4, "ftyp", 4) == 0) {
+        return "video/mp4";
+    }
     if (looksLikePlainText(bytes)) {
         return "text/plain";
     }

@@ -27,7 +27,7 @@ if(WIN32)
 endif()
 
 find_package(Drogon CONFIG REQUIRED)
-find_package(OpenCV CONFIG REQUIRED COMPONENTS core imgproc imgcodecs)
+find_package(OpenCV CONFIG REQUIRED COMPONENTS core imgproc imgcodecs videoio)
 find_package(exiv2 CONFIG REQUIRED)
 find_package(unofficial-sqlite3 CONFIG REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
@@ -74,6 +74,9 @@ add_executable(fakede_engine
     src/analyzers/audio/VoiceNaturalnessAnalyzer.cpp
     src/analyzers/audio/SpliceDetectionAnalyzer.cpp
     src/analyzers/audio/AntiSpoofingAnalyzer.cpp
+    src/util/VideoFrameSampler.cpp
+    src/analyzers/video/VideoTemporalConsistencyAnalyzer.cpp
+    src/analyzers/video/VideoAiFrameAnalyzer.cpp
 )
 
 target_include_directories(fakede_engine PRIVATE src third_party)
@@ -87,7 +90,7 @@ target_compile_definitions(fakede_engine PRIVATE
 
 target_link_libraries(fakede_engine PRIVATE
     Drogon::Drogon
-    opencv_core opencv_imgproc opencv_imgcodecs
+    opencv_core opencv_imgproc opencv_imgcodecs opencv_videoio
     Exiv2::exiv2lib
     unofficial::sqlite3::sqlite3
     nlohmann_json::nlohmann_json

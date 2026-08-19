@@ -15,7 +15,7 @@ export function HomePage({ onFileSelected, isAnalyzing, error }: HomePageProps) 
       {isAnalyzing && (
         <div className="flex items-center justify-center gap-2 text-sm" style={{ color: "var(--text-secondary)" }}>
           <Loader2 size={16} className="animate-spin" />
-          Running metadata, error-level, frequency, noise-residual, and AI-classifier analysis…
+          Running every applicable analyzer for this file type…
         </div>
       )}
 

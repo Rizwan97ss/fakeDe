@@ -65,11 +65,22 @@ it correctly, and is semantically the *right* choice here (not a workaround): si
 filters are fixed after training, baking their traced values in as graph constants is
 exactly correct.
 
-## Not yet integrated (Phase 4 roadmap — see docs/ROADMAP.md)
+## Video: no new model — reuses the image classifier per-frame
+
+`VideoAiFrameAnalyzer` (`engine/src/analyzers/video/VideoAiFrameAnalyzer.cpp`) calls
+the existing `AiGeneratedModelAnalyzer` (UniversalFakeDetect, above) once per sampled
+frame and averages the score. No separate video/deepfake-specific model — e.g.
+Self-Blended Images or `SCLBD/DeepfakeBench` — was fetched or integrated. This is a
+real, known accuracy gap: the image classifier was trained on still images from
+GAN/diffusion generators, not on video-specific manipulation artifacts (face-swap
+boundaries, temporal flicker), so its per-frame scores on video should be read as a
+weaker signal than they are for standalone images. Tracked as an open item below.
+
+## Not yet integrated
 
 - Text (stronger method): [`ahans30/Binoculars`](https://github.com/ahans30/Binoculars), [`baoguangsheng/fast-detect-gpt`](https://github.com/baoguangsheng/fast-detect-gpt)
 - Audio (stronger/ensemble method): [`clovaai/aasist`](https://github.com/clovaai/aasist) - graph-attention layers make its ONNX export a real open question, unlike RawNet2 above
-- Video: [`SCLBD/DeepfakeBench`](https://github.com/SCLBD/DeepfakeBench) unified pretrained release, Self-Blended Images (SBI)
+- Video (dedicated model): [`SCLBD/DeepfakeBench`](https://github.com/SCLBD/DeepfakeBench) unified pretrained release, Self-Blended Images (SBI) - would replace/augment the per-frame image-classifier reuse described above with a model actually trained on video manipulation artifacts
 
-License and conversion notes for each of these get added here when that phase starts —
+License and conversion notes for each of these get added here when integrated —
 not before, so this file never claims more than what's actually integrated.

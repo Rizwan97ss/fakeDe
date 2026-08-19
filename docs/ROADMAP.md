@@ -1,6 +1,6 @@
 # Roadmap
 
-Phases 1-3 are built and verified working. Phase 4 below is architected for (every
+Phases 1-4 are built and verified working. Phase 5 below is architected for (every
 new analyzer just implements `IAnalyzer` and gets registered — see
 `docs/ARCHITECTURE.md`) but not yet built.
 
@@ -50,23 +50,46 @@ new analyzer just implements `IAnalyzer` and gets registered — see
   enough that this wasn't yet a forcing function. Revisit if real usage needs it before
   Phase 4 gets there anyway.
 
-## Phase 4 — Video
+## Phase 4 — Video (done)
 
-- Frame extraction via FFmpeg/libav.
-- ONNX face detector (RetinaFace/SCRFD from the insightface project — not dlib) +
-  per-frame reuse of the Phase 1 image pipeline.
-- Temporal consistency checks (landmark/head-pose flicker) and audio-visual sync
-  checks when an audio track is present.
-- Models from [`SCLBD/DeepfakeBench`](https://github.com/SCLBD/DeepfakeBench)'s
-  unified pretrained release; Self-Blended Images (SBI) for generalization to unseen
-  manipulation methods.
-- **Async & WebSocket**: video jobs are the reason the synchronous Phase-1 API isn't
-  enough — this phase adds a job queue and a WebSocket progress channel (Drogon has
-  native WebSocket support) so the frontend can show per-frame progress instead of
-  blocking on one long HTTP request.
+- **Decoding**: `VideoFrameSampler` uses OpenCV's `cv::VideoCapture` with the
+  Windows Media Foundation backend (`cv::CAP_MSMF`) rather than FFmpeg/libav — see
+  `docs/ARCHITECTURE.md` for why. Container support is therefore whatever MSMF's
+  installed codecs handle; verified against H.264-in-MP4 test files. `FileTypeSniffer`
+  detects MP4 via the `ftyp` box at byte offset 4.
+- **`VideoTemporalConsistencyAnalyzer`**: samples up to 8 frames evenly across the
+  clip, re-runs the existing Phase 1 `ElaAnalyzer`/`FrequencyAnalyzer`/
+  `NoiseResidualAnalyzer` on each sampled frame, and scores the *frame-to-frame
+  standard deviation* of those three signals — continuous camera footage should stay
+  fairly stable across frames; spliced/regenerated content tends to wobble. Verified
+  directionally correct against two synthetic test clips (uniform vs. alternating
+  per-frame noise characteristics): the inconsistent clip scored 1.00 vs. 0.30 for the
+  consistent one.
+- **`VideoAiFrameAnalyzer`**: samples up to 6 frames and reuses the Phase 1
+  `AiGeneratedModelAnalyzer` (UniversalFakeDetect) per frame, reporting the mean
+  score. No dedicated video-deepfake model (e.g. Self-Blended Images or
+  `SCLBD/DeepfakeBench`) was integrated — this reuses the image classifier as-is,
+  which is a real accuracy gap for video-specific manipulation styles it wasn't
+  trained on.
+- Still synchronous (`POST /api/v1/analyze`, no job queue/WebSocket) — deliberately
+  deferred, not forgotten. Video is the slowest pipeline so far (frame decode +
+  multiple per-frame analyzer passes), and Drogon's default 1MB max body size was
+  raised to 200MB to even accept typical clips, but there's no per-frame progress
+  streaming yet.
+- **Known scope gaps, not yet closed**: no face detection/landmark tracking, no
+  head-pose flicker analysis, and no audio-visual sync check (the audio track, if
+  present, isn't analyzed at all — video and audio pipelines don't talk to each
+  other yet). These were explicitly scoped out of this pass rather than attempted
+  and left half-working.
 
-## Phase 5 — Product hardening
+## Phase 5 — Product hardening (not started)
 
+- **Async & WebSocket**: video (and, to a lesser extent, audio) jobs are the reason
+  the synchronous Phase-1 API isn't enough long-term — this would add a job queue and
+  a WebSocket progress channel (Drogon has native WebSocket support) so the frontend
+  can show per-frame/per-analyzer progress instead of blocking on one long HTTP
+  request. Deferred through Phase 4 because test clips were short enough not to force
+  the issue yet.
 - Auth + a real analysis-history dashboard (Phase 1's SQLite store only supports
   fetch-by-id).
 - Fusion calibration: replace `FusionEngine`'s fixed weighted average with a properly
