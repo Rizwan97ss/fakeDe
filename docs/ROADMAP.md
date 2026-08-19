@@ -1,10 +1,10 @@
 # Roadmap
 
-Phase 1 (images) is the current, working slice. Phases 2-4 below are architected for
-(every new analyzer just implements `IAnalyzer` and gets registered — see
+Phases 1-2 are built and verified working. Phases 3-4 below are architected for (every
+new analyzer just implements `IAnalyzer` and gets registered — see
 `docs/ARCHITECTURE.md`) but not yet built.
 
-## Phase 1 — Images (current)
+## Phase 1 — Images (done)
 
 - Analyzers: metadata (exiv2), Error Level Analysis, frequency/FFT spectral analysis,
   sensor-noise-residual, and an ONNX AI-image classifier (UniversalFakeDetect).
@@ -12,17 +12,23 @@ Phase 1 (images) is the current, working slice. Phases 2-4 below are architected
   analysis is sub-second-to-seconds.
 - SQLite result store, keyed by id.
 
-## Phase 2 — Text & documents
+## Phase 2 — Text & documents (done)
 
-- **Text**: [`ahans30/Binoculars`](https://github.com/ahans30/Binoculars) or
-  [`baoguangsheng/fast-detect-gpt`](https://github.com/baoguangsheng/fast-detect-gpt) —
-  not raw GPT-2 perplexity, which is dated relative to these. **This is the least
-  reliable detection domain industry-wide** (documented false-positive issues on
-  human/mixed text across commercial tools) — the UI must visibly hedge text verdicts
-  rather than presenting them with the same confidence framing as image results.
-- **Documents/PDF**: Poppler for incremental-update/xref-history forensics (detects
-  edited-after-signing PDFs), reusing the Phase 1 image pipeline for embedded images
-  and the text pipeline for extracted text.
+- **Text**: two analyzers, both live. `TextStylometryAnalyzer` (sentence-length
+  burstiness, vocabulary richness, repetition — no model needed) and
+  `TextPerplexityAnalyzer` (GPT-2 small via ONNX + a from-scratch C++ BPE tokenizer,
+  classic single-model perplexity+burstiness scoring). **Known scope gap, not yet
+  closed**: this is not the stronger ratio-of-two-models method used by
+  Binoculars/Fast-DetectGPT — that remains real future work, tracked in
+  `docs/model-sourcing.md`. Text stays the least reliable detection domain in this
+  product either way; both analyzers cap their own confidence low regardless of input.
+- **Documents/PDF**: `PdfForensicsAnalyzer` does incremental-update/xref-history
+  forensics via direct byte-scanning (`%%EOF`/`/Prev` counting) rather than a full
+  parser or Poppler — deliberately scoped down from the original plan to avoid a new
+  vcpkg dependency; it under-counts on PDF 1.5+ files using compressed
+  cross-reference streams (documented in the analyzer's own header) rather than
+  over-claiming. Does not yet extract embedded text/images to reuse the text/image
+  pipelines — that's still open if it turns out to matter in practice.
 
 ## Phase 3 — Audio
 

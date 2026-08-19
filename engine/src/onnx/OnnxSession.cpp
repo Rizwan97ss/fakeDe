@@ -75,4 +75,35 @@ std::optional<std::vector<float>> OnnxSession::runSingleInputOutput(
     }
 }
 
+std::optional<std::vector<float>> OnnxSession::runInt64InputFloatOutput(
+    const std::vector<int64_t>& inputIds, const std::vector<int64_t>& inputShape) const {
+    if (!isLoaded()) {
+        return std::nullopt;
+    }
+
+    try {
+        Ort::MemoryInfo memoryInfo = Ort::MemoryInfo::CreateCpu(OrtArenaAllocator, OrtMemTypeDefault);
+        Ort::Value inputTensor = Ort::Value::CreateTensor<int64_t>(
+            memoryInfo, const_cast<int64_t*>(inputIds.data()), inputIds.size(), inputShape.data(), inputShape.size());
+
+        const char* inputNames[] = {inputName_.c_str()};
+        const char* outputNames[] = {outputName_.c_str()};
+
+        auto outputTensors = session_->Run(Ort::RunOptions{nullptr}, inputNames, &inputTensor, 1, outputNames, 1);
+        if (outputTensors.empty() || !outputTensors[0].IsTensor()) {
+            return std::nullopt;
+        }
+
+        const float* outData = outputTensors[0].GetTensorData<float>();
+        const auto outShape = outputTensors[0].GetTensorTypeAndShapeInfo().GetShape();
+        int64_t total = 1;
+        for (auto dim : outShape) total *= std::max<int64_t>(dim, 1);
+
+        return std::vector<float>(outData, outData + total);
+    } catch (const Ort::Exception& ex) {
+        std::cerr << "OnnxSession: inference failed: " << ex.what() << std::endl;
+        return std::nullopt;
+    }
+}
+
 } // namespace fakede

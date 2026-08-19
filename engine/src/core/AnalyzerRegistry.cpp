@@ -3,11 +3,14 @@
 #include <algorithm>
 #include <filesystem>
 
+#include "analyzers/document/PdfForensicsAnalyzer.h"
 #include "analyzers/image/AiGeneratedModelAnalyzer.h"
 #include "analyzers/image/ElaAnalyzer.h"
 #include "analyzers/image/FrequencyAnalyzer.h"
 #include "analyzers/image/MetadataAnalyzer.h"
 #include "analyzers/image/NoiseResidualAnalyzer.h"
+#include "analyzers/text/TextPerplexityAnalyzer.h"
+#include "analyzers/text/TextStylometryAnalyzer.h"
 
 namespace fakede {
 
@@ -40,6 +43,15 @@ AnalyzerRegistry buildDefaultRegistry(const std::string& modelsDir) {
     const std::filesystem::path imageModelPath =
         std::filesystem::path(modelsDir) / "image" / "ai_image_classifier.onnx";
     registry.registerAnalyzer(std::make_unique<AiGeneratedModelAnalyzer>(imageModelPath.string()));
+
+    // Phase 2: text and documents.
+    registry.registerAnalyzer(std::make_unique<TextStylometryAnalyzer>());
+    registry.registerAnalyzer(std::make_unique<PdfForensicsAnalyzer>());
+
+    const std::filesystem::path textModelsDir = std::filesystem::path(modelsDir) / "text";
+    registry.registerAnalyzer(std::make_unique<TextPerplexityAnalyzer>(
+        (textModelsDir / "gpt2.onnx").string(), (textModelsDir / "vocab.json").string(),
+        (textModelsDir / "merges.txt").string()));
 
     return registry;
 }

@@ -49,7 +49,7 @@ export function Dropzone({ onFileSelected, disabled }: DropzoneProps) {
         ref={inputRef}
         type="file"
         className="hidden"
-        accept="image/*"
+        accept="image/*,application/pdf,text/plain,.txt"
         onChange={(e) => handleFiles(e.target.files)}
         disabled={disabled}
       />
@@ -59,7 +59,7 @@ export function Dropzone({ onFileSelected, disabled }: DropzoneProps) {
           Drop a file here, or click to browse
         </p>
         <p className="mt-1 text-sm" style={{ color: "var(--text-muted)" }}>
-          Phase 1 supports images (JPEG, PNG, WebP, BMP). More file types are on the roadmap.
+          Supports images (JPEG, PNG, WebP, BMP), PDFs, and plain text. Audio and video are on the roadmap.
         </p>
       </div>
     </div>

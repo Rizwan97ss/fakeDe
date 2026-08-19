@@ -65,6 +65,10 @@ add_executable(fakede_engine
     src/analyzers/image/FrequencyAnalyzer.cpp
     src/analyzers/image/NoiseResidualAnalyzer.cpp
     src/analyzers/image/AiGeneratedModelAnalyzer.cpp
+    src/analyzers/text/TextStylometryAnalyzer.cpp
+    src/analyzers/text/Gpt2Tokenizer.cpp
+    src/analyzers/text/TextPerplexityAnalyzer.cpp
+    src/analyzers/document/PdfForensicsAnalyzer.cpp
 )
 
 target_include_directories(fakede_engine PRIVATE src)

@@ -61,7 +61,9 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--fc-weights", required=True, help="Path to fc_weights.pth from the upstream repo")
     parser.add_argument("--output", default="../../models/image/ai_image_classifier.onnx")
-    parser.add_argument("--opset", type=int, default=17)
+    # See export_gpt2.py's comment on this default - opset 18 avoids a broken
+    # exporter downgrade-conversion path observed on other models in this project.
+    parser.add_argument("--opset", type=int, default=18)
     args = parser.parse_args()
 
     output_path = Path(args.output)
