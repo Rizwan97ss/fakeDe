@@ -52,7 +52,7 @@ upgrading this is real future work, not a placeholder to hide.
 ## Data flow (Phase 1: images)
 
 1. `POST /api/v1/analyze` (multipart) hits `AnalysisController::handleAnalyze`.
-2. `FileTypeSniffer` (libmagic) determines the real MIME type from file bytes.
+2. `FileTypeSniffer` (magic-byte signature check) determines the real MIME type from file bytes.
 3. `AnalyzerRegistry::analyzersFor(mimeType)` returns the applicable, available analyzers.
 4. Each analyzer runs synchronously (image analysis is sub-second-to-seconds; no job
    queue yet — see `docs/ROADMAP.md` for when that becomes necessary).

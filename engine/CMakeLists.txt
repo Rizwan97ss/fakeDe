@@ -19,11 +19,17 @@ if(NOT DEFINED VCPKG_TARGET_TRIPLET)
     set(VCPKG_TARGET_TRIPLET "x64-windows")
 endif()
 
+if(WIN32)
+    # windows.h's min/max macros (pulled in transitively via Drogon/OpenCV/ONNX Runtime
+    # headers) would otherwise shadow std::min/std::max/std::clamp used throughout the
+    # analyzers.
+    add_compile_definitions(NOMINMAX WIN32_LEAN_AND_MEAN)
+endif()
+
 find_package(Drogon CONFIG REQUIRED)
 find_package(OpenCV CONFIG REQUIRED COMPONENTS core imgproc imgcodecs)
 find_package(exiv2 CONFIG REQUIRED)
-find_package(unofficial-libmagic CONFIG REQUIRED)
-find_package(SQLite3 CONFIG REQUIRED)
+find_package(unofficial-sqlite3 CONFIG REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
 
 # ONNX Runtime: official prebuilt distribution (not vcpkg's from-source port — see
@@ -66,9 +72,8 @@ target_include_directories(fakede_engine PRIVATE src)
 target_link_libraries(fakede_engine PRIVATE
     Drogon::Drogon
     opencv_core opencv_imgproc opencv_imgcodecs
-    exiv2lib
-    unofficial::libmagic::libmagic
-    SQLite::SQLite3
+    Exiv2::exiv2lib
+    unofficial::sqlite3::sqlite3
     nlohmann_json::nlohmann_json
     onnxruntime
 )

@@ -62,8 +62,10 @@ int main() {
         },
         {drogon::Options});
 
+    // Drogon's direct registerHandler() uses numbered placeholders ({1}, {2}, ...),
+    // not named ones - the trailing `std::string id` binds positionally to {1}.
     drogon::app().registerHandler(
-        "/api/v1/analyze/{id}",
+        "/api/v1/analyze/{1}",
         [controller](const drogon::HttpRequestPtr& req, std::function<void(const drogon::HttpResponsePtr&)>&& cb,
                      std::string id) { controller->handleGetResult(req, std::move(cb), std::move(id)); },
         {drogon::Get});

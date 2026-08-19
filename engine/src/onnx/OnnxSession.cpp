@@ -22,6 +22,8 @@ OnnxSession::OnnxSession(const std::string& modelPath) {
         options.SetGraphOptimizationLevel(GraphOptimizationLevel::ORT_ENABLE_ALL);
 
 #ifdef _WIN32
+        // Naive byte->wchar widening: correct for the ASCII paths this app actually
+        // uses (models/ under the install dir), not a general UTF-8 -> UTF-16 decoder.
         const std::wstring widePath(modelPath.begin(), modelPath.end());
         session_ = std::make_unique<Ort::Session>(*env_, widePath.c_str(), options);
 #else

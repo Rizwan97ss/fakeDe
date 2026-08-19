@@ -47,7 +47,7 @@ npm run dev                          # http://localhost:5173, proxies /api -> :8
 ## Repo layout
 
 ```
-engine/   C++20 analysis engine (Drogon + OpenCV + ONNX Runtime + exiv2 + libmagic + SQLite)
+engine/   C++20 analysis engine (Drogon + OpenCV + ONNX Runtime + exiv2 + SQLite)
 web/      Vite + React + TypeScript frontend
 docs/     Architecture, roadmap, and model licensing/provenance notes
 ```

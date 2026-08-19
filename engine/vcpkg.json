@@ -10,7 +10,6 @@
       "features": ["jpeg", "png", "tiff", "webp"]
     },
     "exiv2",
-    "libmagic",
     "sqlite3",
     "nlohmann-json"
   ]

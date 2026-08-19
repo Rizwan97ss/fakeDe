@@ -58,6 +58,7 @@ export function EvidenceCard({ evidence }: { evidence: Evidence }) {
             src={`data:image/png;base64,${evidence.visualizationPngBase64}`}
             alt={`${evidence.humanLabel} visualization`}
             className="w-full block"
+            style={{ maxHeight: "60vh", objectFit: "contain", background: "var(--surface-0)" }}
           />
         </div>
       )}
