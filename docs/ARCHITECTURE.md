@@ -90,6 +90,22 @@ transparent, fixed weighted average (see the comment in `FusionEngine.h`) rather
 calibrated model, because there's no labeled validation data yet to calibrate against —
 upgrading this is real future work, not a placeholder to hide.
 
+**Why the fused score is a weighted-average/median blend, not a pure weighted
+average.** A real case exposed a flaw in pure confidence-weighted averaging: an
+uploaded image got 4 independent classical signals (metadata, ELA, frequency, noise
+residual) leaning "fake" and 1 confident `ai-model:image-classifier` signal leaning
+"authentic". Because that one ML signal carries a 1.5x weight multiplier *and* reported
+high self-confidence, it single-handedly outweighed the other four combined, producing
+an "inconclusive" verdict despite being outvoted 4 to 1. `FusionEngine::fuse()` now
+blends that weighted average 50/50 with the plain median of usable scores — a median
+only moves when a majority of *values* move, so no single analyzer, however confident
+or favorably weighted, can fully override what the rest of the evidence agrees on.
+Reported `overallConfidence` is also dampened by how much the usable scores disagree
+with each other (spread/stddev), so a genuinely split verdict is honestly shown as
+low-confidence instead of a flat number that hides the disagreement. This is a
+structural fix, not a statistical one - it doesn't need labeled data, unlike the
+Platt/isotonic calibration mentioned above, which still does.
+
 ## Data flow (Phase 1: images)
 
 1. `POST /api/v1/analyze` (multipart) hits `AnalysisController::handleAnalyze`.

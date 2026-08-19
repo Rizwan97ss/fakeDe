@@ -111,12 +111,20 @@ new analyzer just implements `IAnalyzer` and gets registered — see
   a WebSocket progress channel (Drogon has native WebSocket support) so the frontend
   can show per-frame/per-analyzer progress instead of blocking on one long HTTP
   request. Still deferred - test clips remain short enough not to force the issue.
-- **Not done: fusion calibration.** `FusionEngine` still uses a fixed, transparently
-  labeled weighted average, not a properly calibrated model (Platt/isotonic scaling).
-  This is genuinely blocked, not just unscheduled: calibration needs labeled
-  ground-truth validation data (real authentic + real fake examples with known
-  labels) that this project doesn't have. Fabricating calibration without that data
-  would be worse than the honest fixed-weight average it has now.
+- **Done: fusion no longer lets one confident signal override a majority.** A real
+  case (see `docs/ARCHITECTURE.md`) showed 4 classical signals leaning "fake" getting
+  fully overridden by 1 confident `ai-model:*` signal under pure weighted averaging.
+  `FusionEngine::fuse()` now blends the weighted average 50/50 with the median of
+  usable scores, and dampens `overallConfidence` when the evidence disagrees with
+  itself. This was a structural fix (doesn't need labeled data), not the statistical
+  calibration below.
+- **Not done: full statistical fusion calibration.** `FusionEngine` still uses a fixed,
+  transparently labeled weighted-average/median blend, not a properly calibrated model
+  (Platt/isotonic scaling) fitted to real accuracy data. This is genuinely blocked, not
+  just unscheduled: calibration needs labeled ground-truth validation data (real
+  authentic + real fake examples with known labels) that this project doesn't have.
+  Fabricating calibration without that data would be worse than the honest fixed
+  formula it has now.
 - **Not done: full multi-user auth, real production deployment hardening beyond
   CORS/API-key** (rate limiting, secrets management, TLS termination, etc.) - open for
   whenever this moves toward a real public deployment.
