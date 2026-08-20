@@ -4,6 +4,8 @@
 
 #include <algorithm>
 
+#include "util/FileHasher.h"
+
 using namespace drogon;
 
 namespace fakede {
@@ -34,6 +36,10 @@ void AnalysisController::handleAnalyze(const HttpRequestPtr& req,
     input.bytes.assign(content.begin(), content.end());
     input.mimeType = fileTypeSniffer_.detectMimeType(input.bytes);
 
+    // Computed regardless of whether an analyzer exists - a hash is valid file
+    // identity even for a format this project can't yet forensically analyze.
+    const FileHashes hashes = computeFileHashes(input.bytes);
+
     const auto analyzers = registry_->analyzersFor(input.mimeType);
 
     if (analyzers.empty()) {
@@ -42,7 +48,9 @@ void AnalysisController::handleAnalyze(const HttpRequestPtr& req,
         resp->setContentTypeCode(CT_APPLICATION_JSON);
         resp->setBody(nlohmann::json{
             {"error", "No analyzer available for detected type: " + input.mimeType},
-            {"detectedMimeType", input.mimeType}}
+            {"detectedMimeType", input.mimeType},
+            {"sha256", hashes.sha256Hex},
+            {"blake3", hashes.blake3Hex}}
                           .dump());
         callback(resp);
         return;
@@ -59,13 +67,15 @@ void AnalysisController::handleAnalyze(const HttpRequestPtr& req,
     const std::string verdictStr = verdictJson.dump();
 
     const std::string id =
-        jobStore_->saveResult(input.fileName, input.mimeType, verdictStr, toString(verdict.overallLabel),
-                               verdict.overallScore);
+        jobStore_->saveResult(input.fileName, input.mimeType, hashes.sha256Hex, hashes.blake3Hex, verdictStr,
+                               toString(verdict.overallLabel), verdict.overallScore);
 
     nlohmann::json responseJson = verdictJson;
     responseJson["id"] = id;
     responseJson["fileName"] = input.fileName;
     responseJson["detectedMimeType"] = input.mimeType;
+    responseJson["sha256"] = hashes.sha256Hex;
+    responseJson["blake3"] = hashes.blake3Hex;
 
     auto resp = HttpResponse::newHttpResponse();
     resp->setContentTypeCode(CT_APPLICATION_JSON);
@@ -86,7 +96,7 @@ void AnalysisController::handleGetResult(const HttpRequestPtr&,
         return;
     }
 
-    // Re-attach the same id/fileName/detectedMimeType fields the original POST
+    // Re-attach the same id/fileName/detectedMimeType/hashes fields the original POST
     // /analyze response carried, so a result reopened from history (GET) has the same
     // shape the frontend's AnalysisResponse type expects as one freshly analyzed.
     nlohmann::json responseJson = nlohmann::json::parse(stored->verdictJson, nullptr, false);
@@ -101,6 +111,8 @@ void AnalysisController::handleGetResult(const HttpRequestPtr&,
     responseJson["id"] = id;
     responseJson["fileName"] = stored->fileName;
     responseJson["detectedMimeType"] = stored->mimeType;
+    responseJson["sha256"] = stored->sha256Hex;
+    responseJson["blake3"] = stored->blake3Hex;
 
     auto resp = HttpResponse::newHttpResponse();
     resp->setContentTypeCode(CT_APPLICATION_JSON);

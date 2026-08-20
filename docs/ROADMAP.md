@@ -128,6 +128,20 @@ new analyzer just implements `IAnalyzer` and gets registered — see
 - **Not done: full multi-user auth, real production deployment hardening beyond
   CORS/API-key** (rate limiting, secrets management, TLS termination, etc.) - open for
   whenever this moves toward a real public deployment.
+- **Done: broader file-type coverage.** SHA-256 (OpenSSL) and BLAKE3 hashes now
+  computed for every uploaded file and returned/persisted regardless of whether an
+  analyzer exists yet. `FileTypeSniffer` now correctly detects HEIC/HEIF and AVIF
+  (previously silently mislabeled as `video/mp4` - both share MP4's ISOBMFF container
+  and are only distinguishable by the `ftyp` box's brand field, a real bug fixed here)
+  plus GIF, ICO, gzip, 7z, RAR, and ZIP-based Office/ODF documents (DOCX/XLSX/PPTX/
+  ODT/ODS/ODP, detected via a byte-scan for characteristic internal filenames, not
+  extraction). None of these new types have analyzers yet - they correctly return the
+  existing honest 415 "no analyzer available" response with the precise detected type,
+  rather than guessing or misrouting. This was scoped deliberately narrow: detection +
+  hashing only, not the full "VERITAS" enterprise-platform spec (GPU inference,
+  Postgres/Redis, sandboxed workers, watermark integrations, chain-of-custody, fuzzing)
+  a user later proposed - see project memory for that scoping conversation. Building
+  real analyzers for these newly-detected formats remains open future work.
 - Revisit `docs/model-sourcing.md` licensing for every integrated model before any
   commercial launch. Reviewed 2026-08-19: all four integrated models (UniversalFakeDetect,
   GPT-2, RawNet2, and video's reuse of UniversalFakeDetect) remain MIT-licensed per

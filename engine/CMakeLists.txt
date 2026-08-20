@@ -31,6 +31,8 @@ find_package(OpenCV CONFIG REQUIRED COMPONENTS core imgproc imgcodecs videoio)
 find_package(exiv2 CONFIG REQUIRED)
 find_package(unofficial-sqlite3 CONFIG REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
+find_package(OpenSSL REQUIRED) # already pulled in transitively by Drogon's TLS support
+find_package(blake3 CONFIG REQUIRED)
 
 # ONNX Runtime: official prebuilt distribution (not vcpkg's from-source port — see
 # docs/ARCHITECTURE.md for why). Fetched by scripts/fetch_onnxruntime.ps1 into
@@ -58,6 +60,7 @@ add_executable(fakede_engine
     src/core/JobStore.cpp
     src/onnx/OnnxSession.cpp
     src/util/FileTypeSniffer.cpp
+    src/util/FileHasher.cpp
     src/util/Base64.cpp
     src/api/AnalysisController.cpp
     src/analyzers/image/MetadataAnalyzer.cpp
@@ -96,6 +99,8 @@ target_link_libraries(fakede_engine PRIVATE
     unofficial::sqlite3::sqlite3
     nlohmann_json::nlohmann_json
     onnxruntime
+    OpenSSL::Crypto
+    BLAKE3::blake3
 )
 
 # Copy the ONNX Runtime DLL next to the built executable so it's found at runtime.

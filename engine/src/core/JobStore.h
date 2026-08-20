@@ -21,12 +21,15 @@ struct AnalysisSummary {
 };
 
 // A single stored result, re-fetched by id. `verdictJson` is the already-serialized
-// Verdict; fileName/mimeType are carried alongside it so GET /analyze/{id} can return
-// the same shape (id + fileName + detectedMimeType + verdict fields) as the original
-// POST /analyze response, instead of a bare Verdict with no file identity.
+// Verdict; fileName/mimeType/hashes are carried alongside it so GET /analyze/{id} can
+// return the same shape (id + fileName + detectedMimeType + hashes + verdict fields)
+// as the original POST /analyze response, instead of a bare Verdict with no file
+// identity.
 struct StoredResult {
     std::string fileName;
     std::string mimeType;
+    std::string sha256Hex;
+    std::string blake3Hex;
     std::string verdictJson;
 };
 
@@ -43,6 +46,7 @@ public:
     // `overallScore` are duplicated out of it into their own columns so listRecent()
     // doesn't need to parse every row's JSON just to render a history table.
     std::string saveResult(const std::string& fileName, const std::string& mimeType,
+                            const std::string& sha256Hex, const std::string& blake3Hex,
                             const std::string& verdictJson, const std::string& overallLabel,
                             double overallScore);
 

@@ -11,11 +11,13 @@ namespace fakede {
 // that's trivial to spoof and would silently misroute e.g. a renamed .exe through the
 // image pipeline.
 //
-// This deliberately checks a handful of well-known signatures directly rather than
-// depending on libmagic's full type database: Phase 1 only ever routes to image
-// analyzers, so recognizing image formats is all that's needed, and it avoids a heavy
-// autotools dependency for a handful of fixed byte patterns. Revisit if a future phase
-// (documents, audio, video) needs broader format coverage.
+// This deliberately checks well-known signatures directly rather than depending on
+// libmagic's full type database, avoiding a heavy autotools dependency (see
+// docs/ARCHITECTURE.md for why libmagic was dropped entirely). Detecting a type here
+// does not imply an analyzer exists for it yet: AnalyzerRegistry::analyzersFor()
+// legitimately returns empty for a correctly-identified but not-yet-supported type
+// (e.g. DOCX, gzip), and AnalysisController reports that honestly rather than
+// guessing or silently misrouting the file through an unrelated analyzer.
 class FileTypeSniffer {
 public:
     // Returns e.g. "image/jpeg". Returns "application/octet-stream" if no known

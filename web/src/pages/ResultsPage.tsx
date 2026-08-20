@@ -2,12 +2,14 @@ import { RotateCcw } from "lucide-react";
 import type { AnalysisResponse } from "../api/types";
 import { VerdictSummary } from "../components/results/VerdictSummary";
 import { EvidenceBreakdownList } from "../components/results/EvidenceBreakdownList";
+import { FileIdentity } from "../components/results/FileIdentity";
 
 export function ResultsPage({ result, onReset }: { result: AnalysisResponse; onReset: () => void }) {
   return (
     <div className="flex flex-col gap-6">
       <VerdictSummary verdict={result} fileName={result.fileName} />
       <EvidenceBreakdownList evidence={result.evidenceBreakdown} />
+      <FileIdentity sha256={result.sha256} blake3={result.blake3} />
 
       <button
         type="button"

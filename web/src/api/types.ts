@@ -23,11 +23,15 @@ export interface AnalysisResponse extends Verdict {
   id: string;
   fileName: string;
   detectedMimeType: string;
+  sha256: string;
+  blake3: string;
 }
 
 export interface ApiErrorResponse {
   error: string;
   detectedMimeType?: string;
+  sha256?: string;
+  blake3?: string;
 }
 
 // Mirrors AnalysisSummary in engine/src/core/JobStore.h - one row of the history list.

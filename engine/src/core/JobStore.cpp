@@ -39,6 +39,8 @@ void JobStore::migrate() {
         "  verdict_json TEXT NOT NULL,"
         "  overall_label TEXT NOT NULL DEFAULT '',"
         "  overall_score REAL NOT NULL DEFAULT 0,"
+        "  sha256_hex TEXT NOT NULL DEFAULT '',"
+        "  blake3_hex TEXT NOT NULL DEFAULT '',"
         "  created_at TEXT NOT NULL DEFAULT (datetime('now'))"
         ");";
     char* errMsg = nullptr;
@@ -54,16 +56,21 @@ void JobStore::migrate() {
                  nullptr);
     sqlite3_exec(db_, "ALTER TABLE results ADD COLUMN overall_score REAL NOT NULL DEFAULT 0;", nullptr, nullptr,
                  nullptr);
+    sqlite3_exec(db_, "ALTER TABLE results ADD COLUMN sha256_hex TEXT NOT NULL DEFAULT '';", nullptr, nullptr,
+                 nullptr);
+    sqlite3_exec(db_, "ALTER TABLE results ADD COLUMN blake3_hex TEXT NOT NULL DEFAULT '';", nullptr, nullptr,
+                 nullptr);
 }
 
 std::string JobStore::saveResult(const std::string& fileName, const std::string& mimeType,
+                                  const std::string& sha256Hex, const std::string& blake3Hex,
                                   const std::string& verdictJson, const std::string& overallLabel,
                                   double overallScore) {
     const std::string id = makeId();
     sqlite3_stmt* stmt = nullptr;
     const char* sql =
-        "INSERT INTO results (id, file_name, mime_type, verdict_json, overall_label, overall_score) "
-        "VALUES (?, ?, ?, ?, ?, ?);";
+        "INSERT INTO results (id, file_name, mime_type, verdict_json, overall_label, overall_score, "
+        "sha256_hex, blake3_hex) VALUES (?, ?, ?, ?, ?, ?, ?, ?);";
     if (sqlite3_prepare_v2(db_, sql, -1, &stmt, nullptr) != SQLITE_OK) {
         throw std::runtime_error("failed to prepare insert statement");
     }
@@ -73,6 +80,8 @@ std::string JobStore::saveResult(const std::string& fileName, const std::string&
     sqlite3_bind_text(stmt, 4, verdictJson.c_str(), -1, SQLITE_TRANSIENT);
     sqlite3_bind_text(stmt, 5, overallLabel.c_str(), -1, SQLITE_TRANSIENT);
     sqlite3_bind_double(stmt, 6, overallScore);
+    sqlite3_bind_text(stmt, 7, sha256Hex.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmt, 8, blake3Hex.c_str(), -1, SQLITE_TRANSIENT);
 
     const int rc = sqlite3_step(stmt);
     sqlite3_finalize(stmt);
@@ -84,7 +93,7 @@ std::string JobStore::saveResult(const std::string& fileName, const std::string&
 
 std::optional<StoredResult> JobStore::getResult(const std::string& id) const {
     sqlite3_stmt* stmt = nullptr;
-    const char* sql = "SELECT file_name, mime_type, verdict_json FROM results WHERE id = ?;";
+    const char* sql = "SELECT file_name, mime_type, sha256_hex, blake3_hex, verdict_json FROM results WHERE id = ?;";
     if (sqlite3_prepare_v2(db_, sql, -1, &stmt, nullptr) != SQLITE_OK) {
         return std::nullopt;
     }
@@ -96,7 +105,7 @@ std::optional<StoredResult> JobStore::getResult(const std::string& id) const {
             const unsigned char* text = sqlite3_column_text(stmt, col);
             return text ? std::string(reinterpret_cast<const char*>(text)) : std::string();
         };
-        result = StoredResult{textOrEmpty(0), textOrEmpty(1), textOrEmpty(2)};
+        result = StoredResult{textOrEmpty(0), textOrEmpty(1), textOrEmpty(2), textOrEmpty(3), textOrEmpty(4)};
     }
     sqlite3_finalize(stmt);
     return result;

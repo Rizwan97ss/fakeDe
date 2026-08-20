@@ -11,6 +11,7 @@
     },
     "exiv2",
     "sqlite3",
-    "nlohmann-json"
+    "nlohmann-json",
+    "blake3"
   ]
 }
